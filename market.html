@@ -1,0 +1,2029 @@
+<!DOCTYPE html> <!-- HTNL5 문서임을 브라우저에서 알림-->
+<html lang='ko'> <!-- 문서의 기본 언어를 한국어로 지정-->
+    <head> <!-- 화면에 직접 표시하지 않는 설정 영역-->
+        <meta charset="UTF-8"> <!-- 한글 등 문자를 UTF-8로 해석-->
+        <meta name="viewport" content="width=device-width,initial-scale=1.0"> 
+        <title>Oction</title> <!-- 브라우저 탭에 표시할 제목-->
+
+        <style> /* 이 안에 화면 디자은을 정하는 CSS를 작성*/ 
+            body{ /* 페이지 전체를 적용 */
+                margin: 0; /* 브라우저 기본 바깥 여백을 없앰 */ 
+                background: #151b28; /* 페이지 배경색, 뒤쪽 body 설정을 덮어씀 */
+                color: #e8edf5; /* 기본 글자색 */
+                font-family: "맑은 고딕", sans-serif; /* 맑은 고딕을 우선 사용 */
+            }
+
+            main { /* 거래소 전체를 담은 main 태그 */
+                max-width: 1000px; /* 최대 너비, 뒤쪽 main 설정에서 변경 */
+                margin: 40px auto;  /* 위아래 여백과 좌우 가운데 정렬 */
+                padding: 24px; /* 테두리와 내용 사이의 안쪽 여백 */ 
+            }
+
+            h1{ /* 가장 큰 제목에 적용 */
+                color: #ffd479; /* 제목을 노란색 계열로 표시 */
+            }
+
+            .panel{ /* class="panel"인 화면 영역에 적용 */
+                background: #222c3d; /* 패널 배경색 */
+                border: 1px solid #39465e; /* 1픽셀 살선 테두리 */
+                border-radius: 12px; /* 모서리를 둥글게 만듬 */
+                padding: 24px; /* 패널 내부 여벽 */
+            }
+
+            .search-bar{ /* 검색 조건들을 담을 영역 */
+                display: flex; /*자식 요소들을 flex 방식으로 배치 */
+                gap: 12px; /* 자식 요소 사이에 12픽셀 간격을 둠 */
+            }
+ 
+            input{ /* 모든 입력칸의 기본 모양 */
+                flex: 1; /* flex 배치에서 남는 공간을 나눠 사용 */
+                min-width: 0; /* 내용 때문에 입력칸이 과도하게 커지는 것을 방지 */
+                padding: 12px; /* 입력칸 안쪽 여백 */
+                border:  1px solid #53627c; /* 입력칸 테두리 */
+                border-radius: 6px; /* 모서리를 둥글게 만듬 */
+                background: #ffffff; /* 입력한 배경 흰식 */
+                color: #000000; /* 입력하는 글자 검은색 */
+            }
+
+            button{ /* 모든 버튼의 기본 모양 */
+                padding:  12px 24px; /* 위아래 12픽셀, 좌우 24픽셀 여백 */
+                background: #ffd479; /* 기본 버튼 배경색 */
+                border:  none; /* 기본 테두리를 없앰 */
+                border-radius: 6px; /* 버튼 모서리를 둥글게 만듬 */
+                font-weight: bold; /* 버튼 글자를 굵게 표시 */
+                cursor: pointer; /* 마우스를 올리면 손 모양으로 표시 */
+            }
+
+            table{ /* 모든 표에 적용 */
+                width: 100%; /* 부모 영역의 가로 너비를 채움 */ 
+                margin-top: 24px; /* 표 위쪽 여백 */
+                border-collapse: collapse; /* 이웃한 셀의 테두리를 합침 */
+            }
+
+            th,td{ /* 표 제목 칸과 일반 칸에 공통 적용 */
+                padding: 16px 8px; /* 셀 안쪽의 위아래/좌우 여백 */
+                border-bottom: 1px solid #39465e; /* 각 행 아래에 구분선을 표시 */
+                text-align: left; /* 셀 내용을 왼쪽으로 정렬 */
+            }
+
+            .notice{ /* class = "notice"인 안내 문구에 적용 */
+                color: #b5c1d5; /* 안내 문구 색상 */
+            }
+            select{ /* 선택 상자의 기본 모양 */
+                padding: 12px; /* 선택 상자의 안쪽 여백 */
+                border: 1px solid #53627c; /* 테두리 */
+                border-radius: 6px; /* 모서리를 둥글게 만듬 */
+                background: white; /* 배경은 횐색 */
+                color: black; /* 선택 항목 글자 검은색 */
+            }
+
+            .sell-panel{ /* 판매 화면 영역 */
+                margin-bottom: 24px; /* 판매 영역 아래쪽 여백 */
+            }
+            #listing-form{ /* id = "listing-form"인 판매 등록 폼 */
+                display: grid; /* 입력 항목을 격자로 배치 */
+                grid-template-columns: 120px minmax(0,1fr); /* 왼쪽 설명 120픽셀, 오른쪽 입력칸은 나머지 너비 */
+                gap: 12px; /* 행과 열 사이의 간격 */
+                align-items: center; /* 같은 행의 설명과 입력칸을 새로 가운데에 맞춤 */
+            }
+
+            #listing-form input,
+            #listing-form select{ /* 판매 등록 폼안의 입력칸과 선택 상자 */
+                width: 100%; /* 자신이 놓인 칸의 가로 너비를 채움 */
+                box-sizing: border-box; /* width 계산에 padding과 border를 포함 */
+            } 
+
+            #sell-button{ /* 판매 등록 버튼 */
+                grid-column: 1 / -1; /* 격자의 첫 번째 선부터 마지막 선까지 차지 */
+            }
+
+            button:disabled{ /* disabled 상태인 버튼에 적용 */
+                opacity: 0.5; /* 버튼을 반투명하게 표시 */
+                cursor: not-allowed; /* 사용할 수 없다는 마우스 모양 표시 */
+            }
+            .market-layout{ /* 검색 조건과 검색 결과를 나누어 영역 */
+                display: grid; /* 두 영역을 grid 방식으로 배치 */
+                grid-template-columns: 220px minmax(0, 1fr); /* 왼쪽은 220픽셀, 오른쪽은 남는 너비 */
+                gap: 24px; /* 왼쪽과 오른쪽 사이 간격 */
+                align-items: start; /* 두 영역을 위쪽에 맞춤 */
+            }
+
+            .search-sidebar{ /* 왼쪽 검색 조건 패널 */
+                display: flex; /* 자식 요소들을 flex로 배치 */
+                flex-direction: column; /* 자식 요소를 위에서 아래로 배치 */
+                padding: 16px; /* 패널 내부 여백 */
+                background: #182333; /* 배경색 */
+                border: 1px solid #39465e; /* 패널 테두리 */
+                border-radius: 6px; /* 모서리를 둥글게 만듬 */
+            }
+
+            .search-sidebar input,
+            .search-sidebar select,
+            .search-sidebar button{ /* 왼쪽 검색 패널 안의 입력 요소들 */
+                width: 100%; /* 패널의 사용 가능한 가로 너비를 채움 */
+                box-sizing:  border-box; /* 테두리와 여백 때문에 너비가 넘치지 않게 함. */
+            }
+
+            .market-layout table{ /* 검색 화면 안의 표 */
+                margin-top: 0; /* 표 위쪽 기본 여백을 없앰 */
+            }
+
+            @media (max-width: 700px){ /* 브라우저 화면 너비가 700픽셀 이하일 때 적용 */
+                .market-layout{
+                    grid-template-columns: 1fr; /* 좌우 배치를 한 열의 위아래 배치로 바꿈 */
+                }
+            }
+            [hidden]{ /* hidden 속성이 붙는 요소 */
+                display: none !important; /*다른 배치 설정보다 우선해서 숨김 */
+            }
+
+            .market-tabs{ /* 검색/판매/완료 탭을 담는 영역 */
+                display: flex; /* 탭들을 가로로 배치 */
+                gap: 4px; /* 탭 사이 간격 */
+                margin-bottom: 16px; /* 탭 아래쪽 여백 */
+            }
+
+            .tab-button{ /* 각 탭 버튼 */
+                flex: 1; /* 탭들이 가로 공간을 같은 비율로 나눔 */
+                background: #263448; /* 선택하지 않는 탭의 배경색 */
+                color: #dce6f3; /* 탭 글자색 */
+                border: 1px solid #43536b; /* 탭 테두리 */
+                border-radius: 6px 6px 0 0; /* 위쪽 두 모서리만 둥길게 함 */
+            }
+
+            .tab-button.active{ /* active 클래스가 있는 선택된 탭 */
+                background: #087f8c; /* 선택한 탭을 청록색으로 표시 */
+                color: white; /* 선택한 탭의 글자색 */
+                border-color: #23b9c7; /*선택한 탭의 테두리색 */
+            }
+            /* 아래부터는 기존 기본 디자인을 게임 거래소 분위기로 덮어쓰는 설정 */
+            /* 같은 우선순위의 같은 속석은 뒤쪽에 작성한 값이 적용 됨 */
+            body {
+                background: #151515; /* 최종 페이지 배경색을 짙은 회색으로 바꿈 */
+                color: #dddddd; /* 최종 기본 글자색을 밝은 회색으로 바꿈 */
+                font-size: 13px; /* 기본 글자 크기 */
+             }
+
+            main{
+                max-width: 1100px; /* 전체 거래소의 최대 너비를 변경 */
+                margin: 24px auto; /* 위아래 여백을 24픽셀로 바꾸고 가운데 정렬 */
+                padding: 6px; /* 거래소 테두리 안쪽 여백을 줄임 */
+                background: linear-gradient(#383838,#242424); /* 위에서 아래로 어두워지는 배경 */
+                border: 2px solid #646459; /* 게임 창처럼 바깥 테두리를 표시 */
+                border-radius: 6px; /* 전체 창의 모서리를 둥글게 함 */
+                box-shadow: 0 8px 30px #000000; /* 창 아래쪽에 그림자를 만듬 */
+            }
+
+            .auction-header{ /* 제목과 구매자 잔액을 담는 상단 영역 */
+                display: flex; /* 제목과 지갑 정보를 가로로 배치 */
+                justify-content: space-between; /* 양쪽 끝으로 벌려 배치 */
+                align-items: center; /* 세로 가운데에 맞춥니다 */
+                gap: 12px; /* 항목 사이 최소 간격 */
+                padding: 10px 12px 16px; /*창 아래쪽에서 그림자를 만듬 */
+            }
+
+            .auction-header h1 { /* 상단 제목에만 적용합니다. */
+                margin: 0px; /* 제목의 기본 바깥 여백을 없앰 */
+                color: #dddddd; /* 제목 글자색 */
+                font-size: 11px; /* 제목 크기 */
+                letter-spacing: 1px; /* 글자 사이 간격을 늘림 */
+            }
+
+            .project-laber { /* 원본 클래스 이름 */
+                color: #aaaaaa; /* 이 클래스가 붙은 요소의 글자색 */
+                font-size: 11px; /* 글자 크기 */
+            }
+            .market-tabs {
+                display: flex; /* 탭을 가로로 배치 */
+                gap: 3px; /* 기존 4픽셀 간격을 3픽셀로 변경 */
+                margin-bottom: 5px; /* 탭 아래 여백을 즐임 */
+            }
+            .tab-button { 
+                flex: 1; /* 각 탭의 너비를 같은 비율로 만듬 */
+                padding: 10px; /* 버튼 내부 여백 */
+                color: #cccccc; /* 탭 글자색 */
+                background: linear-gradient(#484848,#252525); /* 회색 그라데이션 배경 */
+                border: 1px solid #171717; /* 짙은 테두리 */
+                border-radius: 4px 4px 0 0; /* 위쪽 모서리만 약간 둥글게 */
+                box-shadow: inset 0 1px 0 #656565; /* 안쪽 위에 밝은 선을 넘어 입체감을 줌 */
+            }
+
+            .tab-button.active { 
+                color: #ffffff; /* 선택한 탭의 글자색 */
+                background: linear-gradient(#19b3bc,#057280); /* 선택한 탭의 총록색 그라데이션 */
+                border-color: #37c4cb; /* 선택한 탭 테두리색 */
+                box-shadow: inset 0 1px 0 #77e2e6; /* 안쪽 위에 밝은 청록색 선을 넣음 */
+            }
+
+            .panel {
+                padding: 8px; /* 패널 내부 여백을 줄임 */
+                background: #242424; /* 패널 배경을 회색 계열로 바꿈 */
+                border: 1px solid #454545; /* 패널 테두리색 */
+                border-radius: 3px; /* 패널 모서리를 조금만 둥글게 */
+            }
+
+            .market-layout {
+                grid-template-columns: 200px minmax(0,1fr); /* 왼쪽 검색 패널 너비를 200픽셀로 바꿈 */
+                gap: 6px; /* 검색 패널과 목록 사이 간격을 줄임 */
+                min-height: 500px; /* 검색 화면의 최소 높이를 지정 */
+            }
+            
+            .search-sidebar { 
+                padding: 10px; /* 검색 패널 내부 여백 */
+                background: linear-gradient(#343434,#252525); /* 검색 패널의 회색 그라데이션 */
+                border: 1px solid #525252; /* 검색 패널 테두리 */
+                border-radius: 2px; /* 모서리 둥글기 줄임 */
+            }
+
+            #search-button { /*검색 시작 버튼만 지정 */
+                background: linear-gradient(#bfdc43,#829e19); /* 연두색 그라데이션 */
+                color: #ffffff; /* 글자색 */
+                border: 1px solid #617813; /* 버튼 테두리 */
+                border-radius: 2px; /* 버튼 모서리 */
+                text-shadow: 1px 1px #607017; /* 글자 뒤에 작은 그림자를 만듬 */
+            }
+
+            tr,td {
+                border-bottom-color: #454545; /* 행과 일반 셀의 아래 테두리색 지정 */
+            }
+
+            @media (max-width: 700px) { /* 작은 화면에서 적용하는 추가 설정 */
+                .market-layout {
+                    grid-template-columns: 1fr; /* 검색 조건과 결과를 위아래로 표시 */
+                }
+                .auction-header {
+                    flex-wrap: wrap; /* 상단 내용이 넘치면 다음 줄로 넘김 */
+                }
+            }
+            
+            .search-sidebar { 
+                gap: 8px; /* 검색 항목 사이 간격을 줄임 */
+                padding: 0 10px 12px; /* 위쪽 여백은 없애고 좌우/아래 여백을 둠 */
+                align-self: stretch; /* grid 행 높이만큼 패널을 세로로 늘림 */
+            }
+
+            .sidebar-title { /* 이 클래스가 붙은 검색 패널 제목에 적용 */
+                margin: 0 -10px 10px; /* 좌우 음수 여백으로 제목 배경을 패널 가장자리까지 늘림 */
+                padding: 10px; /* 제목 내부 여백 */
+                background: linear-gradient(#16a5b0,#066977); /* 청록색 제목 배경 */
+                border-bottom: 1px solid #35bdc8; /*제목 아래 밝은 테두리 */
+                color: white; /* 제목 글자색 */
+                font-size: 13px; /* 제목 글자 크기 */
+            }
+
+            .search-sidebar label { /* 왼쪽 검색 항목의 이름 */
+                margin-top: 6px; /* 항목 이름 위쪽 간격 */
+                color: #dddddd; /* 어두운 배경에서 잘 보이는 글자색 */
+                font-size: 12px; /* 항목 이름 크기 */
+                font-weight: bold; /* 항목 이름 굵게 표시 */
+            }
+
+            .search-sidebar input,
+            .search-sidebar select {
+                padding: 7px; /* 검색 입력 요소의 내부 여백 */
+                border-radius: 2px; /* 입력 요소 모서리를 작고 둥글게 */
+                font-size: 12px; /* 입력 글자 크기 */
+            }
+
+            .search-actions { /* 초기화/검색 버튼을 담는 영역 */
+                display: grid; /* 버튼을 격자로 배치 */
+                grid-template-columns: 65px minmax(0, 1fr); /* 초기화는 65픽셀, 검색은 남은 너비 */
+                gap: 6px; /* 버튼 사이 간격 */
+                margin-top: 18px; /* 버튼 영역 위쪽 여백 */
+            }
+
+            .search-actions button {
+                padding: 10px 4px; /* 버튼 내부 여백 */
+                font-size: 12px; /* 버튼 글자 크기 */
+            }
+
+            #reset-button { /* 초기화 버튼 */
+                background: linear-gradient(#555555,#303030); /* 회색 그라데이션 */
+                color: white; /* 글자색 */
+                border: 1px solid #666666; /*테두리 */
+                border-radius: 2px; /* 모서리 */
+            }
+
+            .price-range { /* 최저/최고 가격 입력칸을 담는 영역 */
+                display: grid; /* 두 입력칸과 물결표를 격자로 배치 */
+                grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); /*양쪽 입력칸은 같은 너비, 가운데는 내용 너비 */
+                gap: 4px; /* 요소 사이 간격 */
+                align-items: center; /* 입력칸과 물결표를 세로 가운데에 맞춤 */
+            }
+
+            .price-range input { 
+                min-width: 0; /* 입력칸이 부모 너비를 넘어 늘어나지 않게 함 */
+                width: 100%; /* 자신이 배치된 칸의 너비를 채움 */
+                box-sizing: border-box; /* 여백과 테두리를 너비에 포함 */
+            }
+
+            .search-sidebar input,
+            .search-sidebar select {
+                flex: none; /* 공통 input의 flex: 1 때문에 세로로 늘어나는 것을 막음 */
+                height: 30px; /* 입력 요소의 높이를 고정 */
+                padding: 5px 7px; /* 위아래/좌우 내부 여백 */
+                box-sizing: border-box; /* 높이와 너비에 여백/테두리를 포함 */
+                background: #ffffff; /* 입력칸 배경색 */
+                color: #000000; /* 입력 글자색 */
+            }
+            .search-results { /* 오른쪽 검색 결과 영역 */
+                min-width: 0; /* 표의 내용 때문에 grid 너비가 과도하게 커지지 않게 함 */
+                overflow-x: auto; /* 내용이 가로로 넘치면 스크롤을 허용함 */
+            }
+
+            .result-header { /* 검색 결과 건수를 표시하는 줄 */
+                padding: 10px; /* 내부 여백 */
+                background: linear-gradient(#3d3d3d,#292929); /* 회색 그라데이션 */
+                border-bottom: 1px solid #555555; /* 아래쪽 구분선 */
+                color: #cccccc; /* 글자색 */
+            }
+
+            #result-count {
+                color: #d5ec75; /* 결과 건수 숫자를 연두색으로 강조 */
+            }
+
+            .search-results table {
+                margin-top: 0; /* 건수 표시 바로 아래에 표를 붙임 */
+            }
+
+            .search-results th {
+                padding: 10px 8px; /* 검색 결과 표의 제목 칸 여백 */
+                background: #303030; /* 제목 행 배경색 */
+                color: #dddddd; /* 제목 글자색 */
+                font-size: 12px; /* 제목 글자 크기 */
+            }
+
+            .search-results td {
+                padding: 12px 8px; /* 아이템 행의 셀 내부 여백 */
+                font-size: 13px; /* 아이템 정보 글자 크기 */
+            }
+
+            .search-results tbody tr:hover {
+                background: #344348; /* 마우스를 올린 행을 강조 */
+            }
+
+            .search-results tbody tr {
+                    cursor: pointer; /* 아이템 행에 손 모양 마우스를 표시 */
+                }
+            
+            .search-results tbody tr.selected td {
+                background: #15535b; /* selected 클래스가 있는 행의 선택 색상 */
+                color: #ffffff; /* 선택한 행의 글자색 */
+            }
+
+            .selected-item-info { /* 선택한 아이템의 설명 영역 */
+                margin: 12px 0 0; /* 위쪽에만 바깥 여백을 둠 */
+                padding: 12px; /* 내부 여백 */
+                border: 1px solid #485658; /* 정보 영역의 테두리 */
+                background: #1b2527; /* 정보 영역 배경색 */
+                color: #d5ec75; /* 설명 글자를 연두색으로 표시 */
+                line-height: 1.6; /* 줄 높이를 글자 크기의 1.6배로 지정 */
+            }
+
+            #purchase-panel { /* 구매 수량/총액/버튼을 담는 영역 */
+                margin-top: 8px; /* 위쪽 여백 */
+                padding: 12px; /*내부 여백 */
+                background: #303030; /* 배경색 */
+                border: 1px solid #555555; /* 테두리 */
+            }
+
+            #purchase-quantity {
+                width: 90px; /* 구매 수량 입력칸의 너비 */
+                padding: 6px; /* 입력칸 내부 여백 */
+                margin-left: 8px; /* 구매 수량 설명과 입력칸 사이 간격 */
+            }
+
+            #purchase-total {
+                color: #d5ec75; /* 예상 총액 글자색 */
+                font-weight: bold; /* 예상 총액을 굵게 표시 */
+            }
+
+            .wallet { /* 상단 구매자/잔액 정보 영역 */
+                display: flex; /* 정보를 가로로 배치 */
+                flex-wrap: wrap; /* 상단 내용이 넘치면 다음 줄로 넘김 */
+                gap: 8px 20px; /* 세로 8픽셀, 가로 20픽셀 간격 */
+                font-size: 12px; /* 지갑 정보 글자 크기 */
+                color: #dddddd; /* 지갑 정보 글자색 */
+            }
+
+            #wallet-balance {
+                color: #ffd479; /* 보유 재화 숫자를 노란색으로 강조 */
+            }
+
+            #purchase-button{ 
+                background: linear-gradient(#bfdc43,#829e19); /* 구매 버튼의 연두색 그라데이션 */
+                color: white; /* 버튼 글자색 */
+                border: 1px solid #617813; /* 구매 버튼 테두리 */
+                border-radius: 2px; /* 버튼 모서리 */
+            }
+            #purchase-message{
+                color: #ffd479; /* 구매 처리 결과 문구의 글자색 */
+                padding: 0 12px; /* 좌우 내부 여백 */
+            }
+            /* 팝업 배경 */
+            #error-dialog {
+                width: min(380px, calc(100vw - 40px));
+                box-sizing: border-box;
+                padding: 0;
+                background: #292929;
+                color: #dddddd;
+                border: 2px solid #646459;
+                border-radius: 6px;
+                box-shadow: 0 12px 40px #000000;
+            }
+            /* 팝업 뒤의 화면을 어둡게 처리 */
+            #error-dialog::backdrop {
+                background: rgba(0,0,0,0.65);
+            }
+
+            #error-dialog-title {
+                margin: 0;
+                padding: 12px 16px;
+                background: linear-gradient(#3d3d3d,#252525);
+                border-bottom: 1px solid #555555;
+                color: #ffd479;
+                font-size: 15px;
+            }
+
+            #error-dialog-message {
+                margin: 0;
+                padding: 24px 20px;
+                line-height: 1.7;
+                overflow-wrap: anywhere;
+            }
+
+            #error-dialog form {
+                padding: 0 20px 20px;
+                text-align: center;
+            }
+
+            #error-dialog button {
+                min-width: 100%;
+                padding: 9px 24px;
+                background: linear-gradient(#bfdc43, #829e19);
+                color: white;
+                border: 1px solid #617813;
+                border-radius: 3px;
+            }
+
+            #error-dialog button:focus-visible {
+                outline: 2px solid #ffd479;
+                outline-offset: 3px;
+            }
+
+            [hidden] {display: none !important;}
+
+            #login-screen {
+                min-width: 100vh;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+                box-sizing: border-box;
+                background: radial-gradient(ellipse at top, #24434a, #111 75%);
+            }
+
+            .login-card {
+                width: min(420px, 100%);
+                padding: 36px;
+                box-sizing: border-box;
+                background: linear-gradient(#383838, #222);
+                border: 2px solid #6c6c59;
+                border-radius: 8px;
+                box-shadow: 0 20px 60px #0009;
+                color: #eee;
+            }
+
+            .login-card h1 { color: #ffd497; margin: 12px 0;}
+            .login-subtitle { color: #8ddde0;}
+            #login-form { display: grid; gap: 12px; margin-top: 28px;}
+            #login-form label { font-size: 14px;}
+
+            #login-form input {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 13px;
+                background: #fff;
+                color: #111;
+                border: 1px solid #777;
+                border-radius: 4px;
+            }
+
+            #login-button {
+                margin-top: 12px;
+                padding: 15px;
+                background: linear-gradient(#bddc36, #829c15);
+                color: #fff;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+            .login-links {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 14px;
+                margin-top: 22px;
+            }
+
+            .login-links button {
+                background: transparent;
+                border: none;
+                padding: 4px 0;
+                color: #ccc;
+                font-size: 13px;
+                cursor: pointer;
+            }
+
+            .login-links button:hover {
+                color: #ffd479;
+                text-decoration: underline;
+            }
+
+            #signup-screen {
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+                box-sizing: border-box;
+                background: radial-gradient(ellipse at top, #24434a, #111 75%);
+            }
+
+            #signup-form {display: grid; gap: 12px; margin-top: 24px;}
+
+            #signup-form input {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 13px;
+                background: #fff;
+                color: #111;
+                border: 1px solid #777;
+                border-radius: 4px;
+            }
+
+            #signup-button {
+                margin-top: 12px;
+                padding: 15px;
+                background: linear-gradient(#bddc36, #829c15);
+                color: #fff;
+                font-weight: bold;
+            }
+
+            #back-to-login { background: #444; color: #eee; padding: 12px;}
+
+            #market-screen .sell-layout {
+                display: grid;
+                grid-template-columns: 280px minmax(0,1fr);
+                gap: 24px;
+                align-items: start;
+            }
+
+            #market-screen .sell-register {
+                background: #111a25;
+                border: 1px solid #2a3647;
+                border-radius: 12px;
+                padding: 20px;
+            }
+
+            #market-screen .sell-register h2 {
+                margin-bottom: 8px;
+            }
+
+            #market-screen .section-description {
+                color: #9aadc3;
+                font-size: 13px;
+                margin: 0 0 20px;
+            }
+
+            #market-screen #listing-form label {
+                margin-top: 8px;
+                color: #b8c7da;
+                font-size: 13px;
+            }
+
+            #market-screen #sell-button {
+                margin-top: 18px;
+                min-height: 46px;
+            }
+
+            #market-screen .sales-list-panel {
+                min-width: 0;
+            }
+
+            #market-screen .view-toolbar {
+                display: flex;
+                justify-content:  space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+
+            #market-screen .view-toolbar h2 {
+                margin: 0 0 6px;
+            }
+            
+            #market-screen .view-toolbar p {
+                margin: 0;
+                color: #9aadc3;
+            }
+
+            #market-screen .trade-table-scroll {
+                max-height: 580px;
+                overflow: auto;
+                border: 1px solid;
+                border-radius: 10px;
+            }
+
+            #market-screen .trade-table-scroll table {
+                margin-top: 0;
+                min-width: 640px;
+            }
+
+            #market-screen .trade-table-scroll th{
+                position: sticky;
+                top: 0;
+                z-index: 1;
+                white-space: nowrap;
+            }
+
+            #market-screen .trade-table-scroll td {
+                font-variant-numeric: tabular-nums;
+            }
+
+            #market-screen .search-sidebar input,
+            #market-screen .search-sidebar select {
+                height: 44px;
+                min-height: 44px;
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+
+            #market-screen #sales-body button {
+                background: transparent;
+                border: 1px solid #496077;
+                color: #c6d3e2;
+                padding: 8px 12px;
+                white-space: nowrap;
+            }
+
+            @media(max-width: 1000px) {
+                #market-screen .sell-layout {
+                    grid-template-columns: minmax(0,1fr);
+                }
+            }
+
+            body {
+                background: #0c1017;
+                color: #e7ecf3;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            #market-screen {
+                width: calc(100% - 32px);
+                max-width: 1240px;
+                margin: 24px auto;
+                box-sizing: border-box;
+                border: 1px solid #263243;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px #0003;
+            }
+
+            #market-screen .auction-header h1 {
+                font-size: 22px;
+                color: #f3f6fa;
+            }
+
+            #market-screen .market-tabs {
+                gap: 8px;
+                margin-bottom: 24px;
+            }
+
+            #market-screen button {
+                background: #57d6bd;
+                color: #082a24;
+                border: 1px solid transparent;
+                border-radius: 9px;
+                box-shadow: none;
+            }
+
+            #market-screen .tab-button {
+                background: transparent;
+                color: #a7b4c5;
+                border-color: #2a3647;
+                padding: 13px 20px;
+            }
+
+            #market-screen .tab-button.active {
+                background:  #123b3b;
+                color: #79e2d1;
+                border-color: #28766d;
+            }
+
+            #market-screen .panel {
+                background: #171f2b;
+                border: 1px solid #2a3647;
+                border-radius: 14px;
+                padding: 24px;
+            }
+
+            #market-screen #listing-form {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 10px;
+            }
+
+            #market-screen input,
+            #market-screen select {
+                background: #101722;
+                color: #eef3f9;
+                border: 1px solid #3a4a60;
+                border-radius: 8px;
+                box-sizing: border-box;
+            }
+
+            #market-screen #listing-from input,
+            #market-screen #listing-from select {
+                width: 100%;
+                min-height: 44px;
+                padding: 10px 12px;
+            }
+
+            #market-screen input::placeholder {
+                color: #94a3b8;
+            }
+
+            #market-screen .trade-table-scroll {
+                border-color: #2a3647;
+            }
+
+            #market-screen  th,
+            #market-screen .result-header {
+                background: #1d2837;
+                color: #b8c7da;
+                border-bottom: 1px solid #34445a;
+            }
+
+            #market-screen td {
+                padding: 16px 12px;
+                border-bottom: 1px solid #2a3647;
+            }
+
+            #market-screen #logout-button,
+            #market-screen #sales-refresh-button,
+            #market-screen #reset-button {
+                background: #222e3e;
+                color: #d4deeb;
+                border-color: #36465c;
+            }
+
+            #market-screen #history-view {
+                min-height: 460px;
+            }
+            
+            @media (max-width: 700px) {
+                #market-screen { padding: 14px;}
+                #market-screen .panel { padding: 14px;}
+            }
+
+        </style> <!-- CSS 영역을 마침 -->
+    </head> <!-- 문서 설정 영역을 마침 -->
+
+<body> <!-- 브라우저 화면에 표시할 내용 시작 -->
+    <section id="login-screen">
+        <div class="login-card">
+            <p class="login-subtitle">나만의 게임 거래소</p>
+            <h1>AUCTION WORLD</h1>
+            <form id="login-form" novalidate>
+                <label for="login-username">아이디</label>
+                <input id="login-username" type="text" placeholder="아이디 입력" autocomplete="username">
+                <label for="login-password">비밀번호</label>
+                <input id="login-password" type="password" placeholder="비밀번호 입력" autocomplete="current-password">
+                <button id="login-button" type="submit">거래소 입장</button>
+            </form>
+            <div class="login-links">
+                <button id="open-signup" type="button">회원가입</button>
+                <button id="find-username" type="button">아이디 찾기</button>
+                <button id="reset-password" type="button">비밀번호 재설정</button>
+            </div>
+        </div>
+    </section>
+    <section id="signup-screen" hidden>
+        <div class="login-card">
+            <h1>회원가입</h1>
+            <p>아이디는 영문,숫자,밑줄로 3~32자입니다.</p>
+            <form id="signup-form" novalidate>
+                <label for="signup-username">아이디</label>
+                <input id="signup-username" type="text" autocomplete="user" maxlength="32">
+                <label for="signup-password">비밀번호</label>
+                <input id="signup-password" type="password" autocomplete="new-password" placeholder="12~128자">
+                <label for="signup-password-confirm">비밀번호 확인</label>
+                <input id="signup-password-confirm" type="password" autocomplete="new-password">
+                <button id="signup-button" type="submit">가입하기</button>
+                <button id="back-to-login" type="button">로그인으로 돌아가기</button>
+            </form>
+        </div>
+    </section>
+    <main id="market-screen" hidden> <!-- 거래소 전체 화면을 담는 영역 -->
+        <header class="auction-header "> <!-- 상단 제목과 자갑 정보 영역 -->
+            <h1>Auction <span>AUCTION</span></h1> <!-- 거래소 제목과 보조 문구 -->
+            <div class=" wallet"> <!-- 구매자와 보유 재화를 묶음 -->
+                <span id="login-user">로그인하지 않음</span> <!-- 현재 테스트 구매자를 표시 -->
+                <span>보유 재화: <strong id="wallet-balance">조회 중</strong></span> <!-- JS가 잔액 숫자를 넣음 -->
+                <button id="logout-button" type="button">로그아웃</button>
+            </div>
+        </header>
+
+        <nav class="market-tabs" aria-label="거래소 메뉴"> <!-- 거래소 화면 전환 매뉴 -->
+            <button type="button" 
+            class="tab-button active"
+            data-target="search-view"> 
+            검색
+        </button> <!-- 처음 선택된 탭이며 search-view를 보여줌 --> 
+
+        <button type="button"
+                class="tab-button"
+                data-target="sell-view">
+            판매
+        </button> <!-- 판매 등록 화면을 보여주는 탭 -->
+
+        <button type="button"
+                class="tab-button"
+                data-target="history-view">
+            완료
+        </button> <!-- 구매 완료 내역 화면을 보여주는 탭-->
+        <button type="button" class="tab-button" data-target="inventory-view">내 보관함</button>
+    </nav>
+        
+        <section id="sell-view" class="panel sell-panel" hidden> <!-- 판매 화면이며 처음에는 숨김 -->
+            <div class="sell-layout">
+                <aside class="sell-register">
+                <h2>아이템 판매</h2>
+                <p class="section-description">판매할 아이템 정보를 입력하세요.</p>
+           
+
+            <form id="listing-form" novalidate> <!-- 판매 정보를 입력하고 제출하는 폼, 브라우저 기본 안내 대신 직접 작성한 입력 검사와 팝업을 사용 -->
+
+
+                <label for="item-name">아이템 이름</label> <!-- 아이템 이름 입력칸 설명 -->
+                    <input
+                        id="item-name"
+                        type="text"
+                        placeholder="보관함에서 아이템을 선택하세요."
+                        readonly
+                    > <!-- 아이템 이름을 필수로 받음 -->
+                    <button id="open-inventory-button" type="button">보관함에서 선택</button>
+
+                    <label for="sell-category">아이템 분류</label> <!-- 판매용 분류 선택 상자의 설명 -->
+                    <select id="sell-category" required> <!-- 판매할 아이템의 불류를 선택 -->
+                        <option value="" disabled selected>분류를 선택하세요.</option>
+                        <option value="무기">무기</option> <!-- 선택 시 서버에 무기를 전달 -->
+                        <option value="방어구">방어구</option>
+                        <option value="소비">소비</option>
+                        <option value="기타">기타</option> 
+                    </select>
+
+                    <label for="price">개당 가격</label> <!-- 가격 입력칸의 설명 -->
+                    <input id="price" type="number" min="1" step="1" required> <!-- 1 이상의 정수 가격을 입력 받음-->
+
+                    <label for="quantity">판매 수량</label> <!-- 수량 입력칸의 설명 -->
+                    <input id="quantity" type="number" min="1" step="1" required> <!-- 1개 이상의 정수 수량을 입력 받음 -->
+
+                    <button id="sell-button" type="submit">
+                        판매 등록
+                    </button> <!-- 클릭하면 폼의 submit 이번트가 발생 -->
+            </form>
+
+            <p id="sell-message" role="status"></p> <!-- 등록 진행/성공/실패 메시지를 JS가 표시-->
+            </aside>
+
+            <div class="sales-list-panel">
+                <div class="view-toolbar">
+                <div>
+            <h2>내 판매 목록</h2>  <!-- 판매자별 판매 목록 제목 -->
+            <p id="sales-message" role="status"></p>
+            </div>
+
+            <button id="sales-refresh-button" type="button">새로고침</button> <!-- 판매 목록 조회 함수를 실행할 버튼 -->
+            </div>
+
+            <p id="sales-action-message" role="status"></p>
+            <div class="trade-table-scroll">
+            <table> <!-- 판매자별 등록 내역 표 -->
+                <thead> <!-- 표의 제목 영역 -->
+                    <tr> <!-- 제목 한 행 -->
+                        <th>등록 번호</th>
+                        <th>아이템</th>
+                        <th>분류</th>
+                        <th>개당 가격</th>
+                        <th>남은 수량</th>
+                        <th>상태</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-body"></tbody> <!-- 조회 결과 행을 JS가 추가하는 위치 -->
+            </table>
+            </div>
+        </div>
+        </div>
+        </section>
+
+        <section id="search-view" class="panel market-layout"> <!-- 처음부터 보이는 검색 화면 -->
+            <div class="search-bar search-sidebar"> <!-- 왼쪽 검색 조건 패널 -->
+                <h2 class="search-title"> 아이템 검색</h2> 
+
+                <label for="category">아이템 분류</label> <!-- 검색용 분류의 설명 -->
+                <select id="category"> <!-- 검색할 분류를 고르는 선택 상자 -->
+                    <option value=""> 전체 분류</option>
+                    <option value="무기"> 무기</option>
+                    <option value="방어구"> 방어구</option>
+                    <option value="소비"> 소비</option>
+                    <option value="기타"> 기타</option>
+                </select>
+
+                <label for="keyword">아이템 이름</label> <!-- 검색어 입력칸의 설명 -->
+                <input
+                    id="keyword"
+                    type="search"
+                    placeholder="아이템 이름을 입력하세요"
+                > <!-- 검색할 이름을 입력 -->
+
+                <label for="min-price">가격</label> <!-- 가격 범위의 설명 -->
+
+                <div class="price-range"> <!-- 최저/최고 가격을 나란히 닫는 영역 -->
+                    <input
+                        id="min-price"
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="최저"
+                        aria-label="최저 가격"
+                    > <!-- 최저 가격이며 비워 둘 수 있음 -->
+                    <span>~</span>
+                    <input
+                        id="max-price"
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="최고"
+                        aria-label="최고 가격"
+                    > <!-- 최고 가격 -->
+                </div>
+
+                <label for="sort-by">정렬</label> <!-- 정렬 선택 상자의 설명-->
+                <select id="sort-by"> <!-- 조회 결과의 정렬 방식을 고름 -->
+                    <option value="latest">최신 등록순</option> <!-- 서버에 latest를 전달 -->
+                    <option value="price_low">낮은 가격순</option>
+                    <option value="price_high">높은 가격순</option>    
+                </select>                
+
+                <div class="search-actions"> <!-- 검색 관련 버튼 영역 -->
+                    <button id="reset-button" type="button">초기화</button> <!-- 조건을 비우고 전체 목록을 조회 -->
+                    <button id="search-button" type="button">검색 시작</button> <!-- 현재 입력 조건으로 조회 -->
+                </div>
+            </div>
+            <div class="search-results"> <!-- 오른쪽 검색 결과 영역 -->
+                    <div class="result-header"> <!-- 검색 건수 표시줄 -->
+                        검색 결과 <strong id="result-count">0</strong>건 <!-- JS가 숫자를 바꿈 -->
+                    </div>
+
+            <table> <!-- 판매 중인 아이템 목록 표 -->
+                <thead> <!-- 표 제목 영역 -->
+                         <tr> <!-- 제목 행 -->
+                            <th>아이템</th>
+                            <th>분류</th>
+                            <th>개당 가격</th>
+                            <th>수량</th>
+                            <th>판매자</th>
+                        </tr> 
+                    </thead>
+                    <tbody id="listing-body"> <!-- 판매 목록을 JS가 넣는 위치 -->
+                    <tr> <!-- 최초 안내 행 -->
+                        <td colspan="5">판매 목록을 연갈할 준비 중입니다.</td> <!-- 다섯 열을 합쳐 안내 문구를 표시-->
+                    </tr>
+                </tbody>
+                </table>
+                <p id="selected-item-info" class="selected-item-info" role="status"> <!-- 선택한 아이템의 상세 안내 -->
+                    아이템을 선택하세요. <!-- 선택 전 기본 문구 -->
+                </p>
+                <div id="purchase-panel" hidden> <!--아이템 선택 전에는 숨겨 두는 구매 영역 -->
+                    <label for="purchase-quantity">구매 수량</label> <!-- 구매 수량 입력칸의 설명 -->
+                    <input
+                        id="purchase-quantity"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="1"
+                        > <!-- 기본 구매 수량은 1개 -->
+                        <p id="purchase-total" role="status">예상 총액: 0</p> <!-- 수량에 따른 예상 총액을 표시 -->
+                        <button id="purchase-button" type="button">구매하기</button> <!-- 실제 구매 API를 호출할 버튼 -->
+                </div>
+                        <p id="purchase-message" role="status"></p> <!-- 구매 영역이 숨겨져도 결과 문구는 남도록 밖에 둠 -->
+                </div>
+            
+        </section>
+        <section id="history-view" class="panel" hidden> <!-- 처음에는 숨겨 두는 구매 완료 화면 -->
+            <div class="view-toolbar">
+                <div>
+                    <h2>거래 완료 내역</h2> <!-- 완료 화면 제목 -->
+                    <label for="history-type">내역 구분</label>
+                    <select id="history-type">
+                        <option value="buyer">구매 내역</option>
+                        <option value="seller">판매 내역</option>
+                    </select>
+                    <p class="section-description">완료된 구매와 판매 기록을 확인하세요.</p>
+                </div>
+            <p id="history-message" role="status"></p> <!-- 구매 내역 조회 상태와 건수를 표시 -->
+            </div>
+            
+            <div class="trade-table-scroll">
+            <table> <!-- 구매 완료 기록 표 -->
+                <thead> <!-- 제목 영역 -->
+                    <tr> <!-- 제목 행 -->
+                        <th>거래 번호</th>
+                        <th>아이템</th>
+                        <th>거래 상대</th>
+                        <th>개당 가격</th>
+                        <th>수량</th>
+                        <th>총액</th>
+                        <th>처리</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body"></tbody> <!-- 구매 기록 행을 JS 가 추가 함-->
+            </table>
+            </div>
+        </section>
+        <section id="inventory-view" class="panel" hidden>
+            <div class="view-toolbar">
+                <div>
+                    <h2>내 보관함</h2>
+                    <p class="section-description">구매 후 수령한 아이템이 보관됩니다.</p>
+                </div>
+                <button id="inventory-refresh-button" type="button">새로고침</button>
+            </div>
+
+            <p id="inventory-message" role="status"></p>
+
+            <div class="trade-table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>보관 번호</th>
+                            <th>아이템</th>
+                            <th>보유 수량</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <!-- 오류 안내 팝업-->
+     <dialog id="error-dialog" aria-labelledby="error-dialog-title">
+        <h2 id="error-dialog-title">안내</h2>
+        <p id="error-dialog-message"></p>
+
+        <form method="dialog">
+            <button type="submit" autofocus>확인</button>
+        </form>
+     </dialog>
+
+    <script>
+        const signupForm = document.getElementById("signup-form");
+        const signupButton = document.getElementById("signup-button");
+
+        document.getElementById("open-signup").addEventListener("click",function () {
+            document.getElementById("login-screen").hidden = true;
+            document.getElementById("signup-screen").hidden = false;
+            document.getElementById("login-password").value = "";
+            document.getElementById("signup-username").focus();
+        });
+
+        document.getElementById("back-to-login").addEventListener("click",function () {
+            if(signupButton.disabled) return;
+            signupForm.reset();
+            document.getElementById("signup-screen").hidden = true;
+            document.getElementById("login-screen").hidden = false;
+            document.getElementById("login-username").focus();
+        });
+
+        signupForm.addEventListener("submit",async function (event) {
+            event.preventDefault();
+            if (signupButton.disabled) return;
+
+            const username = document.getElementById("signup-username").value.trim();
+            const password = document.getElementById("signup-password").value;
+            const confirmation = document.getElementById("signup-password-confirm").value;
+
+            if (!/^[A-Za-z0-9_]{3,32}$/.test(username)) {
+                showErrorPopup("아이디는 영문, 숫자, 밑줄로 3~32자 입력하세요.");
+                return;
+            }
+
+            const passwordLength = Array.from(password).length;
+            if (passwordLength < 12 || passwordLength > 128) {
+                showErrorPopup("비밀번호는 12~128자로 입력하세요.");
+                return ;
+            }
+
+            if (password !== confirmation) {
+                showErrorPopup("비밀번호가 일치 하지 않습니다.");
+                return;
+            }
+
+            signupButton.disabled = true;
+
+            try {
+                const response = await fetch("/auth/signup", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({username, password}),
+                });
+
+                const result = await response.json();
+
+                if(!response.ok) {
+                    showErrorPopup(typeof result.detail === "string" ? result.detail : "회원가입 정보를 확인하세요.");
+                    return;
+                }
+
+                signupForm.reset();
+                document.getElementById("signup-screen").hidden = true;
+                document.getElementById("login-screen").hidden = false;
+                document.getElementById("login-username").value = username;
+                document.getElementById("login-password").focus();
+                showErrorPopup("회원가입이 완료되었습니다. 새 계정으로 로그인하세요.");
+            } catch(error) {
+                console.error(error);
+                showErrorPopup("가입 결과를 확인하지 못했습니다. 입력한 계정으로 로그인을 시도해 주세요.");
+            }finally {
+                signupButton.disabled = false;
+            }
+        });
+
+        let accessToken = null;
+        let currentBuyer = null;
+
+        const logoutButton = document.getElementById("logout-button");
+
+        logoutButton.addEventListener("click",async function () {
+            if (logoutButton.disabled) return;
+            logoutButton.disabled = true;
+
+            try {
+                const response = await fetch("/auth/logout", {
+                    method: "POST",
+                    headers: {Authorization:"Bearer " + accessToken},
+                });
+
+                if (!response.ok) {
+                    throw new Error("로그아웃 실패 " + response.status);
+                }
+
+                accessToken = null;
+                currentBuyer = null;
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+                showErrorPopup("로그아웃 결과를 확인하지 못했습니다. 다시 시도하세요.");
+            } finally {
+                logoutButton.disabled = false;
+            }
+        });
+
+        const loginForm = document.getElementById("login-form");
+        const loginButton = document.getElementById("login-button");
+
+        loginForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            if (loginButton.disabled) return;
+            
+            const username = document.getElementById("login-username").value.trim();
+            const password = document.getElementById("login-password").value;
+
+            if(!username || !password) {
+                showErrorPopup("아이디와 비밀번호를 입력하세요.");
+                return;
+            }
+
+            loginButton.disabled = true;
+
+            try {
+                const response = await fetch("/auth/login", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({username, password}),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    showErrorPopup(typeof result.detail === "string" ? result.detail : " 로그인 정보를 확인하세요.");
+                    return;
+                }
+
+                accessToken = result.access_token;
+                currentBuyer = result.username;
+                document.getElementById("login-user").textContent = "로그인: " + currentBuyer;
+                document.getElementById("login-password").value = "";
+                document.getElementById("login-screen").hidden = true;
+                document.getElementById("market-screen").hidden = false;
+                await loadBalance();
+                await loadListings();
+
+            }catch (error) {
+                console.error(error);
+                showErrorPopup("로그인 요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요.");
+            } finally {
+                loginButton.disabled = false;
+            }
+        });
+
+        const keywordInput = document.getElementById("keyword"); // 검색어 입력칸을 가져옴
+        const searchButton = document.getElementById("search-button"); // 검색 시작 버튼을 가져옴
+        const listingBody = document.getElementById("listing-body"); // 판매 목록 표의 본문을 가져옴
+        let selectedListing = null; // 현재 선택한 판매 정보, 처음은 공란
+        let latestSearchId = 0;
+
+        function showMessage(message){ // 판매 목록 표 안에 안내 문구를 표시하는 함수
+            listingBody.replaceChildren(); // 표에 있던 기존 행들을 모두 지움
+
+            const row = document.createElement("tr"); // 새 표 행을 만듬
+            const cell = document.createElement("td"); // 안내 문구를 담을 셀을 만듬
+
+            cell.colSpan =5; // 다섯 열을 하나로 합침
+            cell.textContent = message; // 전달받은 안내 문구를 HTML이 아닌 텍스트로 넣음
+            row.appendChild(cell); // 만든 셀을 행 안에 넣음
+            listingBody.append(row); // 안내 행을 실제 표에 추가
+        }
+
+        async function loadListings(notifyEmpty = false){ //서버에서 판매 목록을 조회하고 화면에 표시하는 함수
+            const searchId = ++latestSearchId // 추가: 번호를 1 증가시키고 이번 검색 번호로 보관
+            
+            selectedListing = null; // 다시 조회하면 이전 아이템 선택을 해제
+
+            document.getElementById("selected-item-info").textContent = 
+                "아이템을 선택하세요.";
+
+            document.getElementById("purchase-panel").hidden = true;  // 구매 영역을 숨김
+            document.getElementById("result-count").textContent = "-";
+            searchButton.disabled = true; // 조회 중 검색 버튼을 비활성화
+
+            try{ // 요청과 화면 처리 중 발생하는 오류를 잡음
+            const keyword = keywordInput.value.trim(); // 검색어를 읽고 앞뒤 공백을 제거
+            const params = new URLSearchParams({keyword:keyword}); // 검색어를 URL 검색 조건으로 만듬
+            const category = document.getElementById("category").value; // 선택한 분류로 읽음
+
+            if (category !== ""){ // 전체 분류가 아닌 경우
+                params.set("category",category); // 서버에 보낼 분류 조건을 추가
+            }
+
+            const minText = document.getElementById("min-price").value.trim(); // 최저 가격 입력값
+            const maxText = document.getElementById("max-price").value.trim(); // 최고 가격 입력값
+            
+            for (const text of [minText, maxText]) { // 최저/최고 가격을 하나씩 검사
+                if (text !== "") { // 비워 두지 않는 가격만 검사
+                    const price = Number(text); // 문자열 입력값을 숫자로 변환
+
+                    if(!Number.isSafeInteger(price) || price < 0) { // 안전한 정수가 아니거나 음수인지 검사
+                        showErrorPopup("가격은 0 이상의 정수로 입력하세요."); // 잘못된 가격이라는 안내 표시
+                        return; // 잘못된 가격이면 서버에 검색 요청을 보내지 않음
+                    }
+                }
+            }
+
+            if (
+                minText !== "" && // 최저 가격을 입력
+                maxText !== "" && // 최고 가격을 입력
+                Number(minText) > Number(maxText) // 최저 가격이 더 큰 경우
+            ) {
+                showErrorPopup("최저 가격은 최고 가격보다 클 수 없습니다."); // 가격 범위 오류를 표시
+                return; // 조회를 진행하지 않고 함수를 종료
+            }
+
+            if (minText !== "") { // 최저 가격을 입력한 경우
+                params.set("min_price", minText); // 서버의 min_price 조건으로 전달
+            }
+
+            if (maxText !== "") { // 최고 가격을 입력한 경우
+                params.set("max_price",maxText); // 서버의 max_price 조건을 전달
+            }
+
+            const sortBy = document.getElementById("sort-by").value; // 선택한 정렬 방식을 읽음
+            params.set("sort_by",sortBy); // 서버에 보낼 정렬 조건을 추가
+
+            const response = await fetch("/listings?"+params.toString()); // get 요청을 보내고 응답을 기다림
+
+            if(!response.ok){ // http 응답이 200~299 범위가 아니면 실행
+                throw new Error("조회 실패:" + response.status); // 오류를 만들어 catch로 보냄
+            }
+
+            const data = await response.json(); // json 응담을 jabasript 객체로 읽음
+
+            if (searchId !== latestSearchId) {
+                return;
+            }
+
+            document.getElementById("result-count").textContent = data.total; // 검색 결과 건수를 표시
+
+            if (data.listings.length === 0){ // 조회된 아이템이 없는 경우
+                showMessage("검색 결과가 없습니다."); // 빈 결과 안내를 표시
+
+                if (notifyEmpty === true) {
+                    showErrorPopup("검색 결과가 없습니다.");
+                }
+                return; //표를 만드는 작업을 건너뛰고 종료
+            }
+
+            listingBody.replaceChildren(); // 이전 검색 결과 행을 지움
+
+            for (const item of data.listings){ // 판매 등록 한 건씩 반복 처리
+                const row = document.createElement("tr"); // 아이템 한 건의 행을 만듬
+
+                const values = [ // 표의 열 순서대로 표시할 값을 모음
+                    item.item_name,
+                    item.category,
+                    item.price.toLocaleString("ko-KR"), // 개당 가격에 한국식 천 단위 구분을 적용
+                    item.quantity.toLocaleString("ko-KR"), // 수량을 숫자 형식으로 표시
+                    item.seller
+                ];
+
+                for (const value of values){ // 표시할 값을 하나씩 처리
+                    const cell = document.createElement("td"); // 표의 셀 하나를 만듬
+                    cell.textContent = value; // 셀에 값을 텍스트로 넣음
+                    row.appendChild(cell); // 만든 셀을 아이템 행에 추가
+                }
+
+                row.addEventListener("click", function(){ // 해당 아이템 행을 클랙 했을 때 실행
+                    for(const oldRow of listingBody.querySelectorAll("tr")) { // 기존 표의 모든 행을 확인
+                        oldRow.classList.remove("selected"); // 이전 선택 표시 지움
+                    }
+
+                    row.classList.add("selected"); // 클릭한 행에 선택 표시 클래스를 붙임
+                    selectedListing = item; // 선택한 판매 정보를 구매에 사용할 수 있게 보관
+
+                    document.getElementById("purchase-panel").hidden = false; // 구매 영역을 보여줌
+
+                    const quantityInput = 
+                        document.getElementById("purchase-quantity"); // 구매 수량 입력칸을 가져옴
+
+                    quantityInput.value = "1"; // 새 아이템을 선택하면 수량을 1로 설정
+                    quantityInput.max = item.quantity; // 입력칸의 최대 수량을 현재 판매 수량으로 설정
+
+                    updatePurchaseTotal(); // 선택한 아이템 가격과 수량으로 예상 총액을 계산
+
+                    document.getElementById("selected-item-info").textContent = // 선택 정보 안내를 바꿈
+                    "선택: " + item.item_name +
+                    " | 개당 가격 : " + item.price.toLocaleString("ko-KR") +
+                    " | 수량: " + item.quantity.toLocaleString("ko-KR") +
+                    " | 판매자: " + item.seller;
+                });
+
+                listingBody.appendChild(row); // 완성한 아이템 행을 화면 표에 넣음
+            }
+        } catch (error){ // 요청이나 위쪽 화면 처리 중 오류가 나면 실행
+            if (searchId != latestSearchId) {
+                return;
+            }
+
+            document.getElementById("result-count").textContent = "-"; // 조회 건수를 확인할 수 없다고 표시
+            console.error(error); // 개발자 도구의 console에 실제 오류로 기록
+            showMessage("목록을 불러오지 못했습니다. 서버 실행 상태를 확인하세요."); // 사용자용 안내 표시
+
+        }finally{ // 성공 여부 관계없이 실행
+            if (searchId === latestSearchId) {
+            searchButton.disabled = false; // 검색 버튼을 다시 사용 할 수 있게 함
+            }
+        }
+    }
+
+    searchButton.addEventListener("click",function () {
+        loadListings(true);
+    }); // 검색 버튼 클릭을 판매 목록 조회 함수에 연결 
+
+    keywordInput.addEventListener("keydown", function(event){ // 검색창에서 키를 눌렀을 때 실행
+        if(event.key === "Enter" && !searchButton.disabled){ // enter이며 조회 중이 아닌 경우
+            loadListings(true); // 검색 버튼을 누른 것처럼 목록을 조회
+        }
+    });
+
+        loadListings(); // 페이지를 처음 열면 판매 목록을 자동 조회
+
+        const tabButtons = document.querySelectorAll(".tab-button"); // 모든 탭 버튼을 가져옴
+        const viewIds = ["search-view","sell-view","history-view","inventory-view"]; // 탭별 화면 ID 목록
+ 
+        for(const button of tabButtons){ // 각 탭 버튼에 클릭 동작을 연결
+            button.addEventListener("click",function(){ // 탭을 클릭하면 실행
+                const targetId = button.dataset.target; // DATA-TARGET 속성에서 보여줄 화면 ID로 읽음
+
+                for(const viewId of viewIds){ // 세 화면을 하나씩 확인
+                    const view = document.getElementById(viewId); // 해당 화면 요소를 가져옴
+                    view.hidden = viewId !== targetId; // 선택한 화면은 보이고 나머지는 숨김
+                }
+
+                for (const tab of tabButtons){ // 탭 버튼들의 선택 상태를 갱신
+                    tab.classList.toggle("active", tab === button); // 클릭한 버튼에만 ACTIVE 클래스를 붙임
+                }
+            });
+        }
+
+        const listingForm = document.getElementById("listing-form"); // 판매 등록 폼
+        const sellButton = document.getElementById("sell-button"); // 판매 등록 버튼
+        const sellMessage = document.getElementById("sell-message"); // 판매 등록 결과 안내 영역
+
+        listingForm.addEventListener("submit",async function (event){ // 폼을 제출하면 실행
+            event.preventDefault(); // 폼 제출에 따른 기본 페이지 이동/새로고침을 막음
+ 
+            if (sellButton.disabled){ // 이미 판매 등록 처리 중이라면 실행함
+                return; // 중복 요청을 보내지 않음
+            }
+
+            const listing = { // 먼저 입력값을 하나의 객체로 만듭니다.
+                item_name: document.getElementById("item-name").value.trim(), // 아이템 이름입니다.
+                category: document.getElementById("sell-category").value, // 선택한 분류입니다.
+                price: Number(document.getElementById("price").value), // 가격을 숫자로 변환합니다.
+                quantity: Number(document.getElementById("quantity").value) // 수량을 숫자로 변환합니다.
+            }; // 입력값 객체를 완성한 다음 검사를 시작합니다.
+
+            if (!listing.item_name) { // 아이템 이름이 비어 있는지 확인합니다.
+                sellMessage.textContent = "아이템 이름을 입력하세요."; // 안내 문구를 정합니다.
+                showErrorPopup(sellMessage.textContent); // 팝업을 표시합니다.
+                return; // 등록 요청을 보내지 않습니다.
+            }
+
+            if (
+                !Number.isSafeInteger(listing.price) || listing.price <= 0 || // 가격이 양의 정수가 아니거나,
+                !Number.isSafeInteger(listing.quantity) || listing.quantity <= 0 // 수량이 양의 정수가 아닌 경우입니다.
+            ) {
+                sellMessage.textContent = "가격과 수량은 1 이상의 정수로 입력하세요."; // 입력 오류 안내입니다.
+                showErrorPopup(sellMessage.textContent); // 팝업을 표시합니다.
+                return; // 등록을 중단합니다.
+            }
+
+            sellButton.disabled = true; // 처리 중 등록 버튼을 비활성화
+            sellMessage.textContent = "판매 등록 중입니다."; // 진행 상태를 표시
+
+            try {
+                const response = await fetch("/listings",{ // 판매 등록 API에 요청을 보냄
+                    method: "POST", // 새 데이터를 생성하는 POST 요청
+                    headers: { // 요청 데이터 형식을 지정하는 헤더
+                        "Content-Type":"application/json", // 본문 을 JSON 형식으로 보낸다는 뜻
+                        "Authorization":"Bearer " + accessToken,
+                    },
+                    body: JSON.stringify(listing) // JAVASCRIPT 객체를 JSON 문자열로 변환
+                });
+
+                const result = await response.json(); // 성공/오류 응답의 내용을 먼저 읽음
+
+                if (!response.ok) { // 서버가 판매 등록을 거부한 경우
+                    sellMessage.textContent =
+                        typeof result.detail === "string" // 서버 설명이 문자열인지 확인
+                            ? result.detail // 계정 없음 등의 실제 이유를 표시
+                            : "판매 등록 정보를 확인하세요."; 
+                    showErrorPopup(sellMessage.textContent); // 서버가 알려준 오류를 팝업으로 표시
+                    return;
+                }
+
+                sellMessage.textContent =
+                    "판매 등록 완료! 등록 번호:" + result.listing_id; // 서버가 생성한 판매 번호를 표시
+
+                listingForm.reset(); // 판매 입력칸들을 기본 상태로 되돌림
+                await loadListings(); // 검색 화면의 판매 목록을 갱신
+                await loadSales(); // 조회용 판매자 이름 기준의 판매 등록 내역도 갱신
+            } catch (error){
+                console.error(error); // 실제 오류 개발자 도구에 기록
+                sellMessage.textContent =
+                    "등록 완료를 확인하지 못했습니다. 검색 탭에서 등록 여부를 확인하세요."; // 결과를 확인하지 못했다는 문구
+
+                showErrorPopup(sellMessage.textContent); // 결과 확인 실패도 팝업으로 표시
+            } finally {
+                sellButton.disabled = false; // 등록 버튼을 다시 활성화
+            }
+        });
+        document.getElementById("reset-button").addEventListener("click",function() { // 초기화 버튼의 동작
+            document.getElementById("category").value =""; // 분류를 전체 분류로 바꿈
+            keywordInput.value = ""; // 검색어를 비움
+            document.getElementById("min-price").value = "";
+            document.getElementById("max-price").value = "";
+            document.getElementById("sort-by").value = "latest"; // 정렬을 최신 등록순을 되돌림
+            loadListings(); // 초기화한 조건으로 다시 조회
+        });
+
+        function updatePurchaseTotal() { // 구매 수량에 따른 예상 총액을 계산하는 함수
+            if (selectedListing === null) { // 선택한 아이템이 없는 경우
+                return; // 계산하지 않고 종료
+            }
+
+            const quantity = Number( // 입력된 구매 수량을 숫자로 바꿈
+                document.getElementById("purchase-quantity").value // 현재 구매 수량 입력값
+            );
+
+            const totalElement = document.getElementById("purchase-total"); // 총액 표시 영역
+
+            if (
+                !Number.isSafeInteger(quantity) || // 안전하게 표현할 수 있는 정수가 아니거나
+                quantity < 1 || // 수량이 1보다 작거나
+                quantity > selectedListing.quantity // 현재 판매 수량보다 큰 경우
+            ) {
+                totalElement.textContent =  
+                    "수량은 1~" + selectedListing.quantity + "개로 입력하세요."; 
+                return; // 잘못된 수량으로 금액을 계산하지 않음
+            }
+
+            const total = BigInt(selectedListing.price) * BigInt(quantity); // 정수 연산을 개당 가격*수령을 계산
+            
+            totalElement.textContent = 
+            "예상 총액: " + total.toLocaleString("ko-KR"); // 총액에 천 단위 구분을 적용해 표시
+        }
+
+        document.getElementById("purchase-quantity").addEventListener( // 구매 수량 입력칸에 동작을 연결
+            "input", // 사용자가 값을 바꿀 매마다 실행
+            updatePurchaseTotal // 예상 총액을 다시 계산
+        )
+
+        async function loadBalance() { // 현재 구매자의 DB 잔액을 조회하는 함수
+            const balanceElement = document.getElementById("wallet-balance"); // 상단 잔액 표시 영역
+
+            if (!accessToken) {
+                balanceElement.textContent = "로그인 필요";
+                return;
+            }
+
+            try {
+                const response = await fetch("/auth/me", {
+                    headers: {Authorization: "Bearer " + accessToken},
+                });
+
+                if (!response.ok) { // 사용자 조회가 실패한 경우
+                    throw new Error("잔액 조회 실패: " + response.status); // CATCH로 이동
+                }
+
+                const user = await response.json(); // 사용자 조회 결과
+
+                balanceElement.textContent =  
+                user.balance.toLocaleString("ko-KR"); // 상단에 잔액을 표시
+            } catch (error) {
+                console.error(error); // 조회 오류를 개발자 도구에 기록
+                balanceElement.textContent = "조회 실패"; // 잔액 대신 안내를 표시함
+                showErrorPopup("계정 정보를 조회하지 못했습니다. 다시 로그인하세요.")
+            }
+        }
+
+        loadBalance(); // 페이지를 처음 열면 잔액을 자동 조회
+
+        const purchaseButton = document.getElementById("purchase-button"); // 구매하기 버튼
+        const purchaseMessage = document.getElementById("purchase-message"); // 구매 결과 안내 영역
+
+        purchaseButton.addEventListener("click", async function() { // 구매 버튼을 누르면 실행
+
+            if(!accessToken) {
+                showErrorPopup("로그인 후 구매해 주세요.");
+                return;
+            }
+
+            if (purchaseButton.disabled) { // 이미 구매 처리 중인지 확인
+                return; // 중복 요청 방지
+            }
+            
+            if(selectedListing === null) { // 선택한 아이템이 없는지 확인
+                purchaseMessage.textContent = "구매할 아이템을 선택하세요."; // 화면 안내
+                showErrorPopup(purchaseMessage.textContent); // 같은 내용을 팝업으로 표시
+                return; // 구매를 진행하지 않음
+            }
+
+            const item = selectedListing; // 클릭 시점의 구매 대상 아이템을 보관
+            const quantity = Number( // 구매 수량을 숫자로 변환
+                document.getElementById("purchase-quantity").value // 현재 수량 입력값
+            );
+            
+            if (
+                !Number.isSafeInteger(quantity) || // 정수가 아니거나
+                quantity < 1 || // 수량이 1보다 작거나
+                quantity > item.quantity // 남은 판매 수량보다 많은 경우
+            ) {
+                purchaseMessage.textContent = 
+                    "구매 수량은 1~" + item.quantity + "개로 입력하세요."; // 가능한 수량을 안내
+
+                showErrorPopup(purchaseMessage.textContent);
+                return;
+            }
+
+            if (purchaseButton.disabled) { // 이미 구매 처리 중인 경우
+                return; // 중복 요청을 막음
+            }
+
+            if (selectedListing === null) { // 선택한 아이템이 없는 경우
+                purchaseMessage.textContent = "구매할 아이템을 선택하세요."; // 선택 안내를 표시함
+                return; // 구매 요청을 보내지 않음
+            }
+
+            
+                purchaseButton.disabled = true; // 요청 처리 중 구매 버튼을 비활성화
+                purchaseMessage.textContent = "구매 처리 중입니다."; // 진행 상태를 표시
+
+                try{
+                    const response =await fetch( // 구매 API를 호출
+                        "/listings/" + item.listing_id + "/purchase", // 선택한 판매 번호의 구매 주소
+                        {
+                            method: "POST", // 구매 처리 요청을 POST로 보냄
+                            headers: {
+                                "Content-Type": "application/json", // 요청 본문은 JSON
+                                "Authorization": "Bearer " + accessToken,
+                            },
+                            body: JSON.stringify({ // 구매자와 수량을 JSON 문자열로 변환
+                                quantity: quantity // 구매할 수량, 가격은 서버가 DB에서 읽음
+                            })
+                        }
+                    );
+
+                    const result = await response.json(); // 성공 또는 오류 응담의 JSON 내용을 읽음
+                    
+                    if (!response.ok) { // 서버가 구매를 거부한 경우
+                        purchaseMessage. textContent = 
+                            typeof result.detail === "string" // 서버  오류 설명이 문자열인지 확인
+                            ? result.detail // 문자열이면 잔액 부족 등의 설맹을 그대로 표시
+                            : "구매 요청 내용을 확인하세요."; // 문자열이 아니면 기본 안내를 표시
+
+                        showErrorPopup(purchaseMessage.textContent);
+                            return; // 구매 성공 처리는 잔행하지 않음
+                    }
+
+                    purchaseMessage.textContent = // 구매 성공 문구를 구성
+                        "구매 완료: " + result.item_name + //구매한 아이템 이름
+                        " " + result.quantity + "개" + // 구매 수량
+                        " / 사용 재화: " +
+                        result.total_amount.toLocaleString("ko-KR"); // 실제 서버가 계산한 결재 금액
+
+                    await loadBalance(); // 구매 후 상단 잔액을 다시 읽음
+                    await loadListings(); // 남은 판매수량과 판매 목록을 다시 읽음
+                }
+                catch (error) {
+                    console.error(error); // 통신/응답 처리 오류를 기록
+                    purchaseMessage.textContent = 
+                        "구매 결과를 확인하지 못했습니다. 재구매 전에 잔액과 거래 기록을 확인하세요."; // 통신 오류만으로 구매 실패를 단정하지 않음
+
+                    showErrorPopup(purchaseMessage.textContent);
+                } finally {
+                    purchaseButton.disabled = false; // 처리가 끝나면 구매 버튼을 다시 활성화
+                } 
+            }
+        );
+
+        document.getElementById("history-type").addEventListener(
+                "change",
+                loadPurchaseHistory
+            );
+
+        async function receiveTrade(tradeId, button) {
+            if(button.disabled) return;
+
+            if(!accessToken) {
+                showErrorPopup("로그인 후 수령해 주세요.");
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = "수령 중";
+
+            try {
+                const response = await fetch("/trades/" + tradeId + "/receive", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": ["Bearer",accessToken].join(" "),
+                    },
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    showErrorPopup(typeof result.detail === "string" ? result.detail : "수량 요청을 확인하세요.");
+                    if (response.status === 409) await loadPurchaseHistor();
+                    return;
+                }
+
+                showErrorPopup(result.item_name + " " + result.received_quantity + "개를 수령했습니다.");
+                await loadPurchaseHistory();
+            } catch (error) { 
+                console.error(error);
+                showErrorPopup("수량 결과를 확인하지 못했습니다. 완료 탭을 다시 열어 상태를 확인하세요.");
+            } finally{
+                button.disabled = false;
+                button.textContent = "물품 수령"
+            }
+        }
+
+        async function loadPurchaseHistory() { // 현재 구매자와 구매 완료 기록을 조회
+
+            const role = document.getElementById("history-type").value;
+            const historyLabel = role === "buyer" ? "구매 기록" : " 판매 기록";
+            const historyBody = document.getElementById("history-body"); // 구매 기록 표의 본문
+            const historyMessage = document.getElementById("history-message"); // 구매 기록 안내 영역
+
+            historyBody.replaceChildren(); // 기존 구매 기록 행을 지움
+
+            if (!accessToken) {
+                historyMessage.textContent = "로그인 후 확인할 수 있습니다.";
+                return;
+            }
+
+            historyMessage.textContent = historyLabel + "을 불러오는 중입니다."; // 조회 중임을 표시
+
+            try {
+                const response = await fetch("/me/trades?role=" + role, {
+                    headers:{
+                        "Authorization":["Bearer",accessToken].join(" "),
+                    },
+                }
+                );
+
+                if (!response.ok) { // 조회 응담이 성공이 아니면 실행
+                    throw new Error("구매 기록 조회 실패" + response.status); // CATCH로 이동
+                }
+
+                const data = await response.json(); // 구매 기록 응답을 객체로 읽음
+
+                historyMessage.textContent = historyLabel + " " + data.total + "건";
+
+                for (const trade of data.trades) { // 거래 기록을 하나씩 처리
+                    const row = document.createElement("tr"); // 거래 한 건의 행을 만듬
+
+                    const total = BigInt(trade.price) * BigInt(trade.quantity); // 해당 거래의 총액을 계산
+
+                    const values = [ // 표의 열 순서대로 데이터를 모음
+                        trade.trade_id, // 거래 번호
+                        trade.item_name,
+                        role === "buyer" ? trade.seller : trade.buyer,
+                        trade.price.toLocaleString("ko-KR"), // 거래 당시 개당 가격
+                        trade.quantity.toLocaleString("ko-KR"), // 거래 수량
+                        total.toLocaleString("ko-KR")
+                    ];
+
+                    for (const value of values) { // 옆에 넣을 값을 하나씩 처리
+                        const cell = document.createElement("td"); // 셀 하나를 만듬
+                        cell.textContent = value; // 값을 텍스트로 넣음
+                        row.appendChild(cell); //셀을 거래 행에 추가
+                    }
+
+                    const actionCell = document.createElement("td");
+
+                    if(role === "buyer" && trade.received === 0) {
+                        const receiveButton = document.createElement("button");
+                        receiveButton.type = "button";
+                        receiveButton.textContent = "물품 수령";
+                        receiveButton.addEventListener("click", function(){
+                            receiveTrade(trade.trade_id, receiveButton);
+                        });
+                        actionCell.appendChild(receiveButton);
+                    } else if (role === "buyer") {
+                        actionCell.textContent = "수령 완료";
+                    } else {
+                        actionCell.textContent = "판매 완료";
+                    }
+
+                    row.appendChild(actionCell);
+
+                    historyBody.appendChild(row); // 완성된 거래 행을 표에 추가
+                }
+            } catch (error) {
+                console.error(error); // 오류 내용을 개발자 도구에 기록
+                historyMessage.textContent = "거래 기록을 불러오지 못했습니다.."; // 조회 실패 안내
+            }
+        }
+
+        document.querySelector('[data-target="history-view"]').addEventListener( // 완료 탭도 찾음
+            "click", // 탭을 클릭하면
+            loadPurchaseHistory // 구매 내역도 새로 조회, 기존 탭 전환 동작과 함께 실행
+        );
+
+        async function loadSales() { // 입력한 판매자의 등록 내역 조회
+            const salesBody = document.getElementById("sales-body"); // 판매 내역 표의 본문
+            const salesMassage = document.getElementById("sales-message"); // 판매 안내 영역
+            const seller = currentBuyer;
+            salesBody.replaceChildren(); // 이전 판매 내역 행을 지움
+
+            if (!accessToken || !seller) { // 로그인 상태인지 확인
+                salesMassage.textContent = "로그인 후 확인할 수 있습니다."; // 이름 입력 안내
+                return; // 조회 요청을 보내지 않음
+            }
+            salesMassage.textContent = "판매 목록을 불러오는 중입니다."; // 조회 진행 상태
+
+            try{
+                const response = await fetch("/me/listings", {
+                    headers: {
+                        "Authorization": "Bearer " + accessToken,
+                    },
+                });
+
+                if (!response.ok) { // 조회가 성공하지 않은 경우
+                    throw new Error("판매 목록 조회 실패:" + response.status); // CATCH로 이동
+                }
+                const data = await response.json(); // 판매 등록 조회 결과를 읽음
+
+                salesMassage.textContent = "판매 등록 " + data.total + "건"; // 등록 건수를 표시
+
+                for (const item of data.listings) { // 판매 등록을 한 건씩 처리
+                    const row = document.createElement("tr"); // 판매 등록 한 건의 행
+
+                    const values = [ // 표의 열 순서대로 값을 모음
+                        item.listing_id, // 판매 등록 번호
+                        item.item_name,
+                        item.category,
+                        item.price.toLocaleString("ko-KR"),
+                        item.quantity.toLocaleString("ko-KR"),
+                        item.status // 판매중/판매완료/취소 상태
+                    ];
+
+                    for (const value of values) { // 각 값을 표의 칸으로 만듬
+                        const cell = document.createElement("td"); // 셀을 생성
+                        cell.textContent = value; // 판매 등록 행에 셀을 추가
+                        row.appendChild(cell); // 판매 등록 행에 셀을 추가
+                    }
+                    const actionCell = document.createElement("td");
+
+                    if (item.status === "판매중") {
+                        const cancelButton = document.createElement("button");
+                        cancelButton.type = 'button';
+                        cancelButton.textContent = "판매 취소";
+
+                        cancelButton.addEventListener("click", function (){
+                            cancelSale(item, cancelButton);
+                        })
+
+                        actionCell.appendChild(cancelButton);
+                    }else {
+                        actionCell.textContent = "-";
+                    }
+
+                    row.appendChild(actionCell);
+
+                    salesBody.appendChild(row); // 완성한 생을 판매 내역 표에 넣음
+                }
+            } catch (error) {
+                console.error(error); // 오류를 개발자 도구에 기록
+                salesMassage.textContent = "판매 목록을 불러오지 못했습니다."; // 조회 실패 안내
+            }
+        }
+
+        document.getElementById("sales-refresh-button").addEventListener( // 판매 목록 조회 버튼에 연결
+            "click", // 버튼을 클릭하면
+            loadSales // 판매 목록을 조회
+        );
+
+        document.querySelector('[data-target="sell-view"]').addEventListener( // 판매 탭에도 연결
+            "click", // 판매 탭을 클릭하면
+            loadSales // 판매 등록 내역을 자동으로 조회
+        );
+
+        async function cancelSale(item, button) {
+            if (button.disabled) {
+                return;
+            }
+
+            const message = document.getElementById("sales-action-message");
+
+            button.disabled = true;
+            message.textContent = item.item_name + " 판매 등록을 취소하는 중입니다.";
+
+            try {
+                const response = await fetch(
+                    "/listings/" + item.listing_id + "/cancel",
+
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": ["Bearer", accessToken].join(" "),
+                        },
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    message.textContent = 
+                    typeof result.detail === "string"
+                        ? result.detail
+                        : "취소 요청 내용을 확인하세요.";
+
+                    showErrorPopup(message.textContent);
+                    return;
+                }
+
+                message.textContent = 
+                    "취소 완료: " + result.item_name +
+                    " / 등록 번호 : " + result.listing_id;
+
+                await loadSales();
+                await loadListings();
+            } catch(error) {
+                console.error(error);
+                message.textContent = 
+                    "취소 결과를 확인하지 못했습니다. 판매 목록을 다시 조회하세요.";
+
+                showErrorPopup(message.textContent);
+            } finally {
+                button.disabled = false;
+            }
+        }
+        
+        function showErrorPopup(message) {
+            const dialog = document.getElementById("error-dialog");
+
+            document.getElementById("error-dialog-message").textContent = message;
+
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+        }
+
+        async function loadInventory() {
+            const body = document.getElementById("inventory-body");
+            const message = document.getElementById("inventory-message");
+            const button = document.getElementById("inventory-refresh-button");
+            
+            if (button.disabled) return;
+
+            body.replaceChildren();
+
+            if (!accessToken) {
+                message.textContent = "로그인 후 확인할 수 있습니다";
+                return;
+            }
+
+            button.disabled = true;
+            message.textContent = "보관함을 불러오는 중입니다.";
+
+            try {
+                const response = await fetch("/me/inventory",{
+                    headers: {
+                        "Authorization": ["Bearer", accessToken].join(" "),
+                    },
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(typeof data.detail === "string" ? data.detail : "보관함 조회에 실패했습니다.");
+                }
+
+                message.textContent = data.total === 0
+                ? "보관 중인 아이템이 없습니다. 완료 탭에서 구매 물품을 수령하세요."
+                : "보관 아이템 " + data.total + "종";
+
+                for (const item of data.items) {
+                    const row= document.createElement("tr");
+                    const values = [item.inventory_id, item.item_name, item.quantity.toLocaleString("ko-KR")];
+
+                    for (const value of values) {
+                        const cell = document.createElement("td");
+                        cell.textContent = value;
+                        row.appendChild(cell);
+                    }
+                    const actionCell = document.createElement("td");
+                    const sellItemButton = document.createElement("button");
+                    sellItemButton.type = "button";
+                    sellItemButton.textContent = "판매하기";
+                    sellItemButton.addEventListener("click", function(){
+                        selectInventoryForSale(item);
+                    })
+
+                    actionCell.appendChild(sellItemButton);
+                    row.appendChild(actionCell);
+
+                    body.appendChild(row);
+                }
+
+        } catch (error) {
+            console.error(error);
+            message.textContent = error.message;
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    document.querySelector('[data-target="inventory-view"]').addEventListener("click",loadInventory);
+    document.getElementById("inventory-refresh-button").addEventListener("click", loadInventory);
+
+    function selectInventoryForSale(item) {
+        if (document.getElementById("sell-button").disabled) {
+            showErrorPopup("판매 등록이 끝난 후 아이템을 선택하세요.");
+            return;
+        }
+
+        document.querySelector('[data-target="sell-view"]').click();
+        document.getElementById("item-name").value = item.item_name;
+        document.getElementById("quantity").value = "1";
+        document.getElementById("quantity").max = String(item.quantity);
+        document.getElementById("price").value = "";
+        document.getElementById("sell-category").value = "";
+        document.getElementById("sell-message").textContent =
+            "선택: " + item.item_name + " / 보유 수량: " + item.quantity.toLocaleString("ko-KR") + "개";
+        document.getElementById("sell-category").focus();
+    }
+
+    document.getElementById("open-inventory-button").addEventListener("click", function () {
+        document.querySelector('[data-target="inventory-view"]').click();
+    });
+    </script>
+</body>
+</html>
