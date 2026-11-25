@@ -101,6 +101,21 @@ def initialize_database():  # 서버 시작 시 테이블을 준비합니다.
             )
         ''')
 
+            connection.execute(
+                """CREATE TABLE IF NOT EXISTS trade_payouts (
+                        trade_id INTEGER PRIMARY KEY
+                            REFERENCES trades(trade_id),
+                        seller TEXT NOT NULL
+                            REFERENCES users(username),
+                        amount INTEGER NOT NULL
+                            CHECK(amount > 0 AND amount <= 9007199254740991),
+                        created_at INTEGER NOT NULL,
+                        received_at INTEGER
+                            CHECK(received_at IS NULL OR received_at >= 0)
+                    )
+                    """
+            )
+
             listing_colums = {
                 row['name']
                 for row in connection.execute('PRAGMA table_info(listings)').fetchall()

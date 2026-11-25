@@ -20,8 +20,8 @@ async def lifespan(app: FastAPI): # FastAPI가 서버를 시작하고 종료할 
     yield # 초기화가 끝났으므로 서버가 요청을 처리하도록 넘김
 
 app = FastAPI( # 실행할 API 프로그램을 만듬
-    title="가상 FPS 게임 데이터 API", # API 문서 제목
-    description="포트폴리오용 거래/전투 데이터 분석 프로젝트", # 프로젝트 설명
+    title="Auction World API", # API 문서 제목
+    description="게임 아이템 검색·판매·구매·물품 수령·판매 대금 정산을 제공하는 거래소 API입니다.", # 프로젝트 설명
     version="0.1.0", # 현재 개발 버전
     lifespan=lifespan, # 서버 시작 시 위의 lifespan 함수를 사용 하도록 연결
 ) 
@@ -102,39 +102,52 @@ trades = [ # 여러 거래를 담는 리스트
 ] 
 
 @app.get("/trades")  # 완료된 거래 기록을 조회하는 API
-def get_trades(seller: str | None = None):  # seller는 문자열이며, 생략하면 None이 됩니다.
-    connection = get_connection() # 이번 요청에서 사용할 DB연걸을 만듬
+def get_trades(
+    seller: str | None = None,
+    user:dict = Depends(get_current_user),
+    ):
 
-    try: # 아래 작업 중 오류가 나더라도 finally에서 연결을 담도록 함.
-        if seller is None: # 판매자를 지정하지 않았다면 전체 거래를 조회
-            rows = connection.execute( # DB에 SQL를 실행함.
-                'SELECT * FROM trades ORDER BY trade_id' # 모든 거래를 번호가 작은 순서로 조회
-            ).fetchall() # 조회된 행을 모두 가져옴
-        else: # 판매자를 지정했다면 해당 판매자의 거래만 조회
-            rows = connection.execute( # 조건이 있는 SQL을 실행
-                'SELECT * FROM trades WHERE seller = ? ORDER BY trade_id', # ?에 판매자 값을 전달
-                (seller,), # 값 한 개를 담은 튜블, 마지막 쉼표도 필요
-            ).fetchall() # 조건에 맞는 모든 거래를 가져옴
+    connection = get_connection() 
+
+    try: 
+        sql = """SELECT * FROM trades
+                WHERE (seller = ? OR buyer = ?)"""
+        params = [user['username'], user['username']]
+
+        if seller is not None: 
+            sql += " AND seller = ?"
+            params.append(seller)
+
+        sql += " ORDER BY trade_id"
+        rows = connection.execute(sql,params).fetchall()
+        results = [dict(row) for row in rows]
+
+        return {
+            'total': len(results),
+            'trades': results,
+        }
         
-        trades = [dict(row) for row in rows] # 각 DB 행을 딕셔너리로 바뀌 리스트로 만듬
-
-        return { # 응답으로 보낼 정보를 구성
-            'total': len(trades), # 조회된 거래 건수
-            'trades': trades, # 조회된 거래 목록
-        } # FastAPI가 이 데이터를 JSON으로 반환
-
-    finally: # 정상 처리하거나 오류가 나거나 항상 싱행
-        connection.close() # 이번 요청에 사용한 DB 연결을 닫음
+    finally: 
+        connection.close() 
 
 @app.get('/trades/{trade_id}') # 주소의 거래 번호를 특정 거래 하나를 조회합니다.
-def get_trade(trade_id: int): # 주소에서 받은 trade_id를 정수로 검사
+def get_trade(
+    trade_id: int,
+    user: dict = Depends(get_current_user),
+    ):
+
     connection = get_connection() # DB 연결
 
     try: # 조회 작업 시작
-        row = connection.execute( # SQL 실행
-            'SELECT * FROM trades WHERE trade_id = ?', # 해당 거래 번호의 기록을 찾음
-            (trade_id,), # 물음표에 넣을 거래 번호
-        ).fetchone() # 결과 한 행을 가져오며, 없으면 None
+        row = connection.execute(
+            """
+            SELECT *
+            FROM trades
+            WHERE trade_id = ?
+                AND (seller = ? OR buyer = ?)
+            """,
+            (trade_id, user['username'],user['username']),
+        ).fetchone()
 
         if row is None: # 해당 번호의 거래가 없는 경우
             raise HTTPException( # 정상 응답 대신 HTTP 오류 응답을 보냄
@@ -147,29 +160,34 @@ def get_trade(trade_id: int): # 주소에서 받은 trade_id를 정수로 검사
     finally: # 거래를 찾지 못한 경우 실행
         connection.close() # DB 종료
 
-@app.get('/trade-stats') # 전체 거래 통계를 조회하는 API
-def get_trade_stats(): # 전체 거래 건수/수량/금액 계산
-    connection = get_connection() # DB 연결
+@app.get('/trade-stats') 
+def get_trade_stats(
+    user: dict = Depends(get_current_user),
+):
+    connection = get_connection() 
 
-    try: # 통계 조회를 시작
-        row = connection.execute( # 집계 SQL을 실행
+    try: 
+        row = connection.execute( #
             '''
             SELECT -- 아래 계산 결과를 조회
                 COUNT(*) AS trade_count, -- 거래 기록의 갯수
                 COALESCE(SUM(quantity),0) AS total_quantity, -- 전체 거래 수량이며, 결과가 NULL 이면 0
                 COALESCE(SUM(price * quantity),0) AS total_amount -- 개당 가격*수량을 모두 합한 금액
             FROM trades -- 거래 기록 테이블을 집계
-            '''
-        ).fetchone() # GROUP BY가 없는 전체 집계이므로 결과 한 행을 받음
+            WHERE seller = ? or buyer = ?
+            ''',
+            (user['username'], user['username']),
+        ).fetchone() 
 
-        return dict(row) # 통계 결과를 딕셔너리로 반환
-
+        return dict(row)
     finally: # 조회가 끝나면 실행
         connection.close() # DB 종료
 
 
 @app.get('/seller-stats') # 현재 코드에 등록된 주소, 등호가 들어간 이름을 그대로 유지
-def get_seller_stats(): # 판매자별 거래 통계를 계산하는 함수
+def get_seller_stats(
+    user: dict = Depends(get_current_user),
+):
     connection = get_connection() # DB에 연결
 
     try: # 조회 작업 시작
@@ -181,10 +199,12 @@ def get_seller_stats(): # 판매자별 거래 통계를 계산하는 함수
                 SUM(quantity) AS total_quantity, -- 각 판매자가 거래한 총수량
                 SUM(price * quantity) AS total_amount -- 각 판매자의 총거래 금액
             FROM trades -- 거래 기록을 대상으로 함
+            WHERE seller = ?
             GROUP BY seller -- 같은 판매자의 거래끼리 묶음
             ORDER BY total_amount DESC, seller ASC -- 금액이 큰 순서이며 동률이면 판매자 이름순
-            '''
-        ).fetchall() # 판매자별 결과를 모두 가져옴
+            ''',
+            (user['username'],),
+        ).fetchall()
 
         sellers = [dict(row) for row in rows] # 결과를 딕셔너리 목록으로 바꿈
 
@@ -273,6 +293,8 @@ def get_listing( # 검색 조건을 받는 함수
     min_price: int | None = Query(default=None, ge=0, le=9007199254740991), # 최저 가격
     max_price: int | None = Query(default=None, ge=0, le=9007199254740991), # 최고 가격
     sort_by: Literal['latest','price_low','price_high'] = 'latest', # 허용된 정렬 방식만 받음
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20,ge=1,le=100),
 ): # 검색 조건 정의
     if min_price is not None and max_price is not None: # 양쪽 가격을 모두 입력한 경우
         if min_price > max_price: # 최저 가격이 최고 가격보다 크면 잘못된 조건
@@ -307,14 +329,25 @@ def get_listing( # 검색 조건을 받는 함수
             'price_low': 'price ASC, listing_id DESC', # 낮은 가격순이며 같은 가격은 최신순
             'price_high': 'price DESC, listing_id DESC', # 높은 가격순이며 같은 가격은 최신순
         }
+
+        total = connection.execute(
+            "SELECT COUNT(*) FROM (" + sql + ") AS matched",
+            params,
+        ).fetchone()[0]
  
         sql += " ORDER BY " + sort_options[sort_by] # 선택한 정렬 조건을 SQL 마지막에 붙임
+
+        sql += " LIMIT ? OFFSET ?"
+        params.extend([page_size,(page - 1) * page_size])
 
         rows = connection.execute(sql, params).fetchall() # 완성한 SQL과 입력값으로 검색
         listings = [dict(row) for row in rows] # DB 결과를 딕셔너리 목록으로 바꿈
 
         return { # 검색 응답 구성
-            'total': len(listings), # 검색 결과 건수
+            'total': total,
+            'page': page,
+            'page_size':page_size,
+            'total_pages':(total + page_size - 1) // page_size,
             'listings': listings, # 검색된 판매 등록 목록
         }
 
@@ -327,7 +360,16 @@ def market_page(): # 거래소 HTML을 제공하는 함수
     return FileResponse(html_path) # HTML 파일을 브라우저로 전달
 
 @app.get('/users/{username}') # 주소에 지정한 사용자 정보를 조회
-def get_user(username: str): # 사용자 이름을 문자열로 받음
+def get_user(
+    username: str,
+    user: dict = Depends(get_current_user),
+):
+    if username != user['username']:
+        raise HTTPException(
+            status_code=403,
+            detail='본인의 잔액만 조회할 수 있습니다.',
+        )
+    
     connection = get_connection() # DB 연결
 
     try: # 사용자 조회 시작
@@ -400,18 +442,10 @@ def purchase_listing(
             if buyer['balance'] < total: # 구매자의 잔액을 결재 금액보다 적은 경우
                 raise HTTPException(400, '보유 재화가 부족합니다.') # 잔액 변경 전에 구매를 중단
 
-            if seller['balance'] + total > 9007199254740991: # 입금 후 잔액이 정한 한도를 넘는지 확인
-                raise HTTPException(409,'판매자외 보유 재화 한도를 초과합니다.') # 입금을 진행하지 않음
-
             connection.execute( # 구매자에게서 재화를 차감
                 "UPDATE users SET balance = balance - ? WHERE username = ?", # 잔액을 구매 금액만큼 줄임
                 (total, buyer_username), # 차감할 금액과 구매자 이름
             ) # 아직 트랜잭션 안이므로 이 변경만 따로 확정되진 않음
-
-            connection.execute( # 판매자에게 재화를 입금
-                "UPDATE users SET balance = balance + ? WHERE username = ?", # 잔액을 구매 금액만큼 늘림
-                (total, listing['seller']), # 입금 금액과 판매자 이름
-            ) # 이후 작업이 실패하면 앞의 차감과 함께 취소됨
 
             remaining = listing['quantity'] - purchase.quantity # 구매 후 남은 판매 수량
             status = '판매완료' if remaining == 0 else '판매중' # 남은 수량이 0이면 판매완료로 변경
@@ -432,6 +466,18 @@ def purchase_listing(
                     listing['item_name'],
                     listing['price'],
                     purchase.quantity,
+                ),
+            )
+            connection.execute(  # 구매가 성공한 거래의 판매 대금을 기록합니다.
+                """
+                INSERT INTO trade_payouts (trade_id, seller, amount, created_at)
+                VALUES (?, ?, ?, ?)
+                """,  # 수령 시각은 NULL로 두어 미수령 상태로 저장합니다.
+                (
+                    cursor.lastrowid,  # 방금 생성한 거래 번호입니다.
+                    listing['seller'],  # 대금을 받을 판매자입니다.
+                    total,  # 구매자가 지불한 금액입니다.
+                    int(time.time()),  # 대금 발생 시각입니다.
                 ),
             )
 
@@ -465,7 +511,18 @@ def get_user_trades(
                 EXISTS (
                     SELECT 1 FROM trade_item_receipts
                     WHERE trade_item_receipts.trade_id = trades.trade_id
-                    ) AS received
+                    ) AS received,
+                    COALESCE(
+                        (
+                            SELECT CASE
+                                WHEN received_at IS NULL THEN 'pending'
+                                ELSE 'received'
+                            END
+                            FROM trade_payouts
+                            WHERE trade_payouts.trade_id = trades.trade_id
+                    ),
+                    'legacy'
+                ) AS payout_status
             FROM trades -- 거래 기록 테이블 조회
             WHERE {column} = ? -- 해당 사용자가 구매자인 거래만 가져옴
             ORDER BY trade_id DESC -- 최근 거래부터 표시
@@ -560,6 +617,7 @@ def cancel_listing(
                 "UPDATE listings SET status = '취소' WHERE listing_id = ?",
                 (listing_id,), # 수량은 유지하고 판매 상태만 바꿈
             )
+
 
             result = {
                 'listing_id': listing_id,
@@ -774,6 +832,77 @@ def receive_trade(
                 'received_quantity': trade['quantity'],
                 'message': '물품을 수령했습니다.',
             }
+
+    finally:
+        connection.close()
+
+@app.post('/trades/{trade_id}/payout')
+def receive_payout(
+    trade_id: int,
+    user: dict = Depends(get_current_user),
+):
+    connection = get_connection()
+
+    try:
+        with connection:
+            connection.execute('BEGIN IMMEDIATE')
+
+            trade = connection.execute(
+                'SELECT seller FROM trades WHERE trade_id = ?',
+                (trade_id,),
+            ).fetchone()
+
+            if trade is None:
+                raise HTTPException(404,'거래를 찾을 수 없습니다.')
+
+            if trade['seller'] != user['username']:
+                raise HTTPException(403, '본인의 판매 대금만 수령할 수 있습니다.')
+
+            payout = connection.execute(
+                'SELECT amount, received_at FROM trade_payouts WHERE trade_id = ? AND seller = ?',
+                (trade_id,user['username']),
+            ).fetchone()
+
+            if payout is None:
+                raise HTTPException(409,'별도로 수령할 판매 대금이 없습니다.')
+
+            if payout['received_at'] is not None:
+                raise HTTPException(409,'이미 수령한 판매 대금입니다.')
+
+            amount = payout['amount']
+            balance_limit = 9007199254740991
+
+            updated = connection.execute(
+                """
+                UPDATE users
+                SET balance = balance + ?
+                WHERE username = ?
+                    AND balance <= ?
+                """,
+                (amount, user['username'],balance_limit - amount),
+            )
+
+            if updated.rowcount != 1:
+                raise HTTPException(409,'보유 재화 한도를 초과하여 수령할 수 없습니다.')
+
+            connection.execute(
+                'UPDATE trade_payouts SET received_at =? WHERE trade_id = ?',
+                (int(time.time()), trade_id),
+            )
+
+            balance = connection.execute(
+                'SELECT balance FROM users WHERE username = ?',
+                (user['username'],),
+            ).fetchone()['balance']
+
+            result = {
+                'trade_id': trade_id,
+                'received_amount': amount,
+                'balance': balance,
+                'message': '판매 대금을 수령했습니다.',
+            }
+
+        return result
 
     finally:
         connection.close()

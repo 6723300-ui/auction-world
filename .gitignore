@@ -20,3 +20,6 @@ __pycache__/
 # 이전 코드와 데이터의 백업입니다.
 *.bak
 trades-before-db.json
+
+# 설치 검증용 가상환경입니다.
+.venv-check/

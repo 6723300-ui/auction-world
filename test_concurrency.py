@@ -68,7 +68,19 @@ def test_only_one_buyer_can_purchase_last_item(tmp_path,monkeypatch):
             for name in ['buyer_one','buyer_two']
         ]
         assert sorted(balances) == [9000,10000]
-        assert client.get('/auth/me',headers=tokens['seller_test']).json()['balance'] == 1000
+
+        seller_headers = tokens['seller_test']
+        assert client.get('/auth/me',headers=seller_headers).json()['balance'] == 0
+
+        successful = next(response for response in responses if response.status_code == 201)
+        trade_id = successful.json()['trade_id']
+        payout_url = f'/trades/{trade_id}/payout'
+
+        payout = client.post(payout_url, headers=seller_headers)
+        assert payout.status_code == 200,payout.text
+        assert payout.json()['received_amount'] == 1000
+        assert client.post(payout_url, headers=seller_headers).status_code == 409
+        assert client.get('/auth/me',headers=seller_headers).json()['balance'] == 1000
         
         saved = client.get('/me/listings', headers=tokens['seller_test']).json()['listings'][0]
         assert saved['quantity'] == 0

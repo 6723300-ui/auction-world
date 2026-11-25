@@ -116,6 +116,35 @@ def test_trade_flow_preserves_money_and_items(tmp_path,monkeypatch):
         assert purchase.json()['remaining_quantity'] == 1
 
         assert client.get('/auth/me', headers=buyer).json()['balance'] == 8000
+        assert client.get('/auth/me', headers=seller).json()['balance'] == 0
+        history = client.get('/me/trades?role=seller',headers=seller)
+        assert history.status_code == 200, history.text
+        pending_trade = next(
+            trade for trade in history.json()['trades']
+            if trade['trade_id'] == trade_id
+        )
+        assert pending_trade['payout_status'] == 'pending'
+
+        payout_url = f'/trades/{trade_id}/payout'
+        assert client.post(payout_url).status_code == 401
+        assert client.post(payout_url,headers=buyer).status_code == 403
+
+        payout = client.post(payout_url,headers=seller)
+        assert payout.status_code == 200,payout.text
+        assert payout.json()['trade_id'] == trade_id
+        assert payout.json()['received_amount'] == 2000
+
+        history = client.get('/me/trades?role=seller', headers=seller)
+        assert history.status_code == 200, history.text
+        paid_trade = next(
+            trade for trade in history.json()['trades']
+            if trade['trade_id'] == trade_id
+        )
+        assert paid_trade['payout_status'] == 'received'
+
+        assert client.get('/auth/me',headers=seller).json()['balance'] == 2000
+
+        assert client.post(payout_url, headers=seller).status_code == 409
         assert client.get('/auth/me', headers=seller).json()['balance'] == 2000
 
         receive_url = f'/trades/{trade_id}/receive'
