@@ -12,7 +12,6 @@ FastAPI와 SQLite로 구현한 게임 아이템 거래소 개인 프로젝트입
 ![Auction World 소개](docs/images/overview.png)
 
 - [화면 소개 영상 보기 / 다운로드](docs/demo/auction-world-overview.mp4) — 약 52초, 1080p, 무음 자막
-- [직접 거래를 시연하는 순서와 발표 대본](docs/demo/DEMO.md)
 
 소개 영상은 실제 화면 캡처를 순서대로 보여주는 자료입니다. 연속 거래 조작을 녹화한 영상은 아닙니다.
 아래 화면은 2026년 11월 25일 로컬 데모 계정으로 캡처했으며, 마우스 커서와 편집기 영역은 제외했습니다.
