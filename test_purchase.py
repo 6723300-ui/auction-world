@@ -1,6 +1,6 @@
-import database # 테스트할 때 사용할 DB 경로를 변경하기 위해 가져옴
-from main import app # FASTAPI
-from fastapi.testclient import TestClient # 브라우저 없이 API에 요청을 보내는 도구
+import database
+from main import app
+from fastapi.testclient import TestClient
 
 def test_trade_flow_preserves_money_and_items(tmp_path,monkeypatch):
     monkeypatch.setattr(database, 'DB_PATH', tmp_path / 'test.db')

@@ -1,29 +1,29 @@
-from typing import Literal # 입력값과 정해진 선택지로 제한하는 도구
-from fastapi import FastAPI, HTTPException, Query, Depends # API 서버를 만드는 도구를 가져옴
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials # 요청 헤더에서 로그인 토큰을 읽음
-from pydantic import BaseModel, Field, ConfigDict # 요청 데이터의 구조와 값의 허용 범위를 정의, 입력 검사와 모델 설정 도구
-from contextlib import asynccontextmanager # 서버 시작/종료 작업을 정의하는 도구
-from database import get_connection, initialize_database # database.py에서 DB 연결/초기화 함수를 가져옴
-from pathlib import Path # 파일의 위치와 경로를 다룹니다.
-from fastapi.responses import FileResponse # HTML 같은 파일을 브라우저에 전달
-import sqlite3 # 사용자 이름 중복 같은 DB 오류 처리
-from pwdlib import PasswordHash # 비밀번호 해시를 생성하는 도구
-from pydantic import BaseModel, Field, ConfigDict, SecretStr # 기존 import에 SecretStr 추가
-import secrets # 예측하기 어려운 로그인 토큰
-import hashlib # 토큰을 DB에 보관하기 위한 해시를 만듬
-import time # 로그인 만료 시각을 계산
+from typing import Literal
+from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, Field, ConfigDict
+from contextlib import asynccontextmanager
+from database import get_connection, initialize_database
+from pathlib import Path
+from fastapi.responses import FileResponse
+import sqlite3
+from pwdlib import PasswordHash
+from pydantic import BaseModel, Field, ConfigDict, SecretStr
+import secrets
+import hashlib
+import time
 
 
-@asynccontextmanager # yield 기준으로 시버 시작 전 작업과 종료 작업을 나눔
-async def lifespan(app: FastAPI): # FastAPI가 서버를 시작하고 종료할 때 사용하는 함수
-    initialize_database() # 요청을 받기 전에 DB 테이블과 테스트 계정을 준비
-    yield # 초기화가 끝났으므로 서버가 요청을 처리하도록 넘김
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_database()
+    yield
 
-app = FastAPI( # 실행할 API 프로그램을 만듬
-    title="Auction World API", # API 문서 제목
-    description="게임 아이템 검색·판매·구매·물품 수령·판매 대금 정산을 제공하는 거래소 API입니다.", # 프로젝트 설명
-    version="0.1.0", # 현재 개발 버전
-    lifespan=lifespan, # 서버 시작 시 위의 lifespan 함수를 사용 하도록 연결
+app = FastAPI(
+    title="Auction World API",
+    description="게임 아이템 검색·판매·구매·물품 수령·판매 대금 정산을 제공하는 거래소 API입니다.",
+    version="0.1.0",
+    lifespan=lifespan,
 ) 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -68,40 +68,40 @@ def get_current_user(
     finally:
         Connection.close()
 
-@app.get("/") # 기본 주소로 GET 요청이 오면 아래 함수를 실행
-def read_root(): # 기본 주소의 응답을 만드는 함수
-    return{"message":"게임 데이터 API가 실행 중입니다."} # 딕셔너리가 JSON 응답으로 전달
+@app.get("/")
+def read_root():
+    return{"message":"게임 데이터 API가 실행 중입니다."}
 
 
-@app.get("/health") # 서버 상태를 확인하는 주소
-def health_check(): # 서버 상태를 확인하는 함수
-    return{ # 응답 데이터 생성
-        "status":"ok" # 서버가 정상적으로 응답하는 표시
+@app.get("/health")
+def health_check():
+    return{
+        "status":"ok"
     }
 
-# 처음 메모리 저장을 연습할 때 만들었던 데이터
-# 현재 아래 API들은 DB를 사용하므로 이 전역 목록은 거래 조회/구매에 사용되지 않습니다.
-# 연습용 거래 기록 추후 DB에 저장한 데이터를 조회
-trades = [ # 여러 거래를 담는 리스트
-    { # 첫 번째 거래 정보를 담는 딕셔너러
-        "trade_id": 1, # 거래구분 번호
-        "seller": "player_001", # 판매자
-        "buyer": "player_002", # 구매자
-        "item_name":"드래곤 라이플", # 거래한 아이템
-        "price":1500, # 아이템 1개 가격
-        "quantity": 1, # 거래 수량
+
+
+
+trades = [
+    {
+        "trade_id": 1,
+        "seller": "player_001",
+        "buyer": "player_002",
+        "item_name":"드래곤 라이플",
+        "price":1500,
+        "quantity": 1,
     },
-    { # 두 번째 거래
-        "trade_id":2, # 거래구분 번호
-        "seller":"player_003", # 판매자
-        "buyer":"player_001", # 구매자
-        "item_name":"회복 키트", # 거래한 아이템
-        "price":200, # 아이템 1개 가격
-        "quantity":5, # 거래 수량
+    {
+        "trade_id":2,
+        "seller":"player_003",
+        "buyer":"player_001",
+        "item_name":"회복 키트",
+        "price":200,
+        "quantity":5,
     },
 ] 
 
-@app.get("/trades")  # 완료된 거래 기록을 조회하는 API
+@app.get("/trades")
 def get_trades(
     seller: str | None = None,
     user:dict = Depends(get_current_user),
@@ -130,15 +130,15 @@ def get_trades(
     finally: 
         connection.close() 
 
-@app.get('/trades/{trade_id}') # 주소의 거래 번호를 특정 거래 하나를 조회합니다.
+@app.get('/trades/{trade_id}')
 def get_trade(
     trade_id: int,
     user: dict = Depends(get_current_user),
     ):
 
-    connection = get_connection() # DB 연결
+    connection = get_connection()
 
-    try: # 조회 작업 시작
+    try:
         row = connection.execute(
             """
             SELECT *
@@ -149,16 +149,16 @@ def get_trade(
             (trade_id, user['username'],user['username']),
         ).fetchone()
 
-        if row is None: # 해당 번호의 거래가 없는 경우
-            raise HTTPException( # 정상 응답 대신 HTTP 오류 응답을 보냄
-                status_code=404, # 요청한 데이터를 찾을 수 없는 상태
-                detail='해당 거래를 찾을 수 없습니다.', # 응답에 표시할 설명
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail='해당 거래를 찾을 수 없습니다.',
             )
 
-        return dict(row) # 조회한 한 행을 딕셔너리로 변환해서 반환
+        return dict(row)
 
-    finally: # 거래를 찾지 못한 경우 실행
-        connection.close() # DB 종료
+    finally:
+        connection.close()
 
 @app.get('/trade-stats') 
 def get_trade_stats(
@@ -167,73 +167,73 @@ def get_trade_stats(
     connection = get_connection() 
 
     try: 
-        row = connection.execute( #
+        row = connection.execute(
             '''
-            SELECT -- 아래 계산 결과를 조회
-                COUNT(*) AS trade_count, -- 거래 기록의 갯수
-                COALESCE(SUM(quantity),0) AS total_quantity, -- 전체 거래 수량이며, 결과가 NULL 이면 0
-                COALESCE(SUM(price * quantity),0) AS total_amount -- 개당 가격*수량을 모두 합한 금액
-            FROM trades -- 거래 기록 테이블을 집계
+            SELECT
+                COUNT(*) AS trade_count,
+                COALESCE(SUM(quantity),0) AS total_quantity,
+                COALESCE(SUM(price * quantity),0) AS total_amount
+            FROM trades
             WHERE seller = ? or buyer = ?
             ''',
             (user['username'], user['username']),
         ).fetchone() 
 
         return dict(row)
-    finally: # 조회가 끝나면 실행
-        connection.close() # DB 종료
+    finally:
+        connection.close()
 
 
-@app.get('/seller-stats') # 현재 코드에 등록된 주소, 등호가 들어간 이름을 그대로 유지
+@app.get('/seller-stats')
 def get_seller_stats(
     user: dict = Depends(get_current_user),
 ):
-    connection = get_connection() # DB에 연결
+    connection = get_connection()
 
-    try: # 조회 작업 시작
-        rows = connection.execute( # 판매자별 집계 SQL 실행
+    try:
+        rows = connection.execute(
             '''
             SELECT 
-                seller, -- 통계가 누구의 것인 판매자 이름도 반환
-                COUNT(*) AS tade_count, -- 각 판매자의 거래 건수, 현재 응답 이름은 tade_count
-                SUM(quantity) AS total_quantity, -- 각 판매자가 거래한 총수량
-                SUM(price * quantity) AS total_amount -- 각 판매자의 총거래 금액
-            FROM trades -- 거래 기록을 대상으로 함
+                seller,
+                COUNT(*) AS tade_count,
+                SUM(quantity) AS total_quantity,
+                SUM(price * quantity) AS total_amount
+            FROM trades
             WHERE seller = ?
-            GROUP BY seller -- 같은 판매자의 거래끼리 묶음
-            ORDER BY total_amount DESC, seller ASC -- 금액이 큰 순서이며 동률이면 판매자 이름순
+            GROUP BY seller
+            ORDER BY total_amount DESC, seller ASC
             ''',
             (user['username'],),
         ).fetchall()
 
-        sellers = [dict(row) for row in rows] # 결과를 딕셔너리 목록으로 바꿈
+        sellers = [dict(row) for row in rows]
 
-        return{ # 집계 응담 구성
-            'total': len(sellers), # 집계된 판매자 그룹 수
-            'sellers': sellers, # 판매자별 집계 목록
-        } # 판매자 이름과 거래 건수/수량/금액을 함께 반환
+        return{
+            'total': len(sellers),
+            'sellers': sellers,
+        }
 
-    finally: # 조회 후 항상 실행
-        connection.close() # DB 연결 종료
+    finally:
+        connection.close()
 
-class ListingCreate(BaseModel): # 판매 등록 시 받을 입력 구조
-    model_config = ConfigDict(str_strip_whitespace=True) # 문자열 앞뒤 공백을 먼저 제거
+class ListingCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
 
-    item_name: str = Field(min_length=1) # 아이템 이름
-    category: Literal['무기','방어구','소비','기타'] # 네 가지 분류 중 하나만 허용
-    price: int = Field(strict=True, gt=0, le=9007199254740991) # SQLlife 정수 범위 안의 양수 가격
-    quantity: int = Field(strict=True, gt=0, le=9007199254740991) # 판매 등록 수량도 양수로 제한
+    item_name: str = Field(min_length=1)
+    category: Literal['무기','방어구','소비','기타']
+    price: int = Field(strict=True, gt=0, le=9007199254740991)
+    quantity: int = Field(strict=True, gt=0, le=9007199254740991)
 
 
-@app.post('/listings', status_code=201) # 새로운 판매 등록을 만드는 API
+@app.post('/listings', status_code=201)
 def create_listing(
     listing: ListingCreate,
     user: dict = Depends(get_current_user),
     ):
-    connection = get_connection() # DB연결
+    connection = get_connection()
 
-    try: # 등록 작업 시작
-        with connection: # 성공하면 저장하고, 오류나면 취소
+    try:
+        with connection:
             connection.execute('BEGIN IMMEDIATE')
 
             inventory = connection.execute(
@@ -260,12 +260,12 @@ def create_listing(
                     (remaining, inventory['inventory_id']),
                 )
 
-            cursor = connection.execute( # 새 판매 정보를 DB에 추가
+            cursor = connection.execute(
                 '''
-                INSERT INTO listings( -- 판매 등록 테이블에 행 추가
-                    seller, item_name, category, price, quantity, stock_reserved -- 저장할 컬럼 순서
+                INSERT INTO listings(
+                    seller, item_name, category, price, quantity, stock_reserved
                 )
-                VALUES(?,?,?,?,?,1) -- 아래 다섯 값을 순서대로 사용
+                VALUES(?,?,?,?,?,1)
                 ''',
              (
                     user['username'],
@@ -276,58 +276,58 @@ def create_listing(
                 ),
          )
             
-            row = connection.execute( # 방금 등록한 판매 정보를 다시 조회
-                'SELECT * FROM listings WHERE listing_id =?', # 등록 번호 찾기
-                (cursor.lastrowid,), # 방금 생성한 번호 전달
-            ).fetchone() # 한 행을 가져옴, 기본 상태와 등록 시각도 포함
+            row = connection.execute(
+                'SELECT * FROM listings WHERE listing_id =?',
+                (cursor.lastrowid,),
+            ).fetchone()
 
-        return dict(row) # DB 저장이 끝난 뒤 등록 결과를 반환
+        return dict(row)
 
-    finally: # 오류 발생 여부와 관계없이 실행
-        connection.close() # DB 종료
+    finally:
+        connection.close()
                 
-@app.get('/listings') # 거래소 검색 화면에서 사용하는 판매 목록 API
-def get_listing( # 검색 조건을 받는 함수
-    keyword: str | None = None, # 아이템 이름 검색어이며, 생락 가능
-    category: Literal['무기', '방어구', '소비', '기타'] | None = None, # 분류 조건이며 생략 가능
-    min_price: int | None = Query(default=None, ge=0, le=9007199254740991), # 최저 가격
-    max_price: int | None = Query(default=None, ge=0, le=9007199254740991), # 최고 가격
-    sort_by: Literal['latest','price_low','price_high'] = 'latest', # 허용된 정렬 방식만 받음
+@app.get('/listings')
+def get_listing(
+    keyword: str | None = None,
+    category: Literal['무기', '방어구', '소비', '기타'] | None = None,
+    min_price: int | None = Query(default=None, ge=0, le=9007199254740991),
+    max_price: int | None = Query(default=None, ge=0, le=9007199254740991),
+    sort_by: Literal['latest','price_low','price_high'] = 'latest',
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20,ge=1,le=100),
-): # 검색 조건 정의
-    if min_price is not None and max_price is not None: # 양쪽 가격을 모두 입력한 경우
-        if min_price > max_price: # 최저 가격이 최고 가격보다 크면 잘못된 조건
-            raise HTTPException( # 잘못된 검색 조건이라는 응답을 보냄
-                status_code= 422, # 입력 조건이 유효하지 않다는 상태 코드
-                detail='최저 가격은 최고 가격보다 클 수 없습니다.' # 오류 설명
+):
+    if min_price is not None and max_price is not None:
+        if min_price > max_price:
+            raise HTTPException(
+                status_code= 422,
+                detail='최저 가격은 최고 가격보다 클 수 없습니다.'
             )
-    connection = get_connection() # 검색 조건 검사 통과 후 DB 연결
+    connection = get_connection()
 
-    try: # 검색 SQL을 만들고 실행
-        sql = "SELECT * FROM listings WHERE status = '판매중'" # 판매 중인 아이템만 검색
-        params = [] # SQL의 ?에 넣을 값들을 순서대로 보관
+    try:
+        sql = "SELECT * FROM listings WHERE status = '판매중'"
+        params = []
 
-        if keyword and keyword.strip(): # 검색어가 있고 공백뿐인 값이 아니라면 실행
-            sql += " AND instr(item_name, ?) > 0" # 이름에 검색어가 포함되는 조건 붙임
-            params.append(keyword.strip()) # 검색어의 앞뒤 공백을 제거해 전달
+        if keyword and keyword.strip():
+            sql += " AND instr(item_name, ?) > 0"
+            params.append(keyword.strip())
             
-        if category is not None: # 분류를 지정한 경우
-            sql += " AND category = ?" # 같은 분류만 조회하도록 조건을 추가
-            params.append(category) # 선택한 분류를 전달
+        if category is not None:
+            sql += " AND category = ?"
+            params.append(category)
 
-        if min_price is not None: # 최저 가격이 지정된 경우
-            sql += " AND price >= ?" # 개당 가격이 최저 가격 이상이여야 함
-            params.append(min_price) # 최조 가격 전달
+        if min_price is not None:
+            sql += " AND price >= ?"
+            params.append(min_price)
 
-        if max_price is not None: #
+        if max_price is not None:
             sql += " AND price <= ?"
             params.append(max_price)
 
-        sort_options = { # 정렬 이름에 대응하는 SQL을 미리 정해 둠
-            'latest': 'listing_id DESC', # 등록 번호가 큰 최신 상품부터 표시
-            'price_low': 'price ASC, listing_id DESC', # 낮은 가격순이며 같은 가격은 최신순
-            'price_high': 'price DESC, listing_id DESC', # 높은 가격순이며 같은 가격은 최신순
+        sort_options = {
+            'latest': 'listing_id DESC',
+            'price_low': 'price ASC, listing_id DESC',
+            'price_high': 'price DESC, listing_id DESC',
         }
 
         total = connection.execute(
@@ -335,31 +335,31 @@ def get_listing( # 검색 조건을 받는 함수
             params,
         ).fetchone()[0]
  
-        sql += " ORDER BY " + sort_options[sort_by] # 선택한 정렬 조건을 SQL 마지막에 붙임
+        sql += " ORDER BY " + sort_options[sort_by]
 
         sql += " LIMIT ? OFFSET ?"
         params.extend([page_size,(page - 1) * page_size])
 
-        rows = connection.execute(sql, params).fetchall() # 완성한 SQL과 입력값으로 검색
-        listings = [dict(row) for row in rows] # DB 결과를 딕셔너리 목록으로 바꿈
+        rows = connection.execute(sql, params).fetchall()
+        listings = [dict(row) for row in rows]
 
-        return { # 검색 응답 구성
+        return {
             'total': total,
             'page': page,
             'page_size':page_size,
             'total_pages':(total + page_size - 1) // page_size,
-            'listings': listings, # 검색된 판매 등록 목록
+            'listings': listings,
         }
 
-    finally: # 검색 성공 여부와 관계없이 실행
-        connection.close() # DB 연결 종료
+    finally:
+        connection.close()
 
-@app.get('/market', include_in_schema=False) # 거래소 화면 주소이며 /docs 목록에는 표시하지 않음
-def market_page(): # 거래소 HTML을 제공하는 함수
-    html_path = Path(__file__).resolve().parent / 'market.html' # main.py와 같은 폴더의 HTML을 찾음
-    return FileResponse(html_path) # HTML 파일을 브라우저로 전달
+@app.get('/market', include_in_schema=False)
+def market_page():
+    html_path = Path(__file__).resolve().parent / 'market.html'
+    return FileResponse(html_path)
 
-@app.get('/users/{username}') # 주소에 지정한 사용자 정보를 조회
+@app.get('/users/{username}')
 def get_user(
     username: str,
     user: dict = Depends(get_current_user),
@@ -370,95 +370,95 @@ def get_user(
             detail='본인의 잔액만 조회할 수 있습니다.',
         )
     
-    connection = get_connection() # DB 연결
+    connection = get_connection()
 
-    try: # 사용자 조회 시작
-        row = connection.execute( # 사용자 이름과 잔액 조회
-            'SELECT username, balance FROM users WHERE username = ?', # 이름이 일치하는 계정 찾기
-            (username,), # 조회할 사용자 이름
-        ).fetchone() # 계정 한 개를 가져오며 없으면 None
+    try:
+        row = connection.execute(
+            'SELECT username, balance FROM users WHERE username = ?',
+            (username,),
+        ).fetchone()
 
-        if row is None: # 해당 사용자가 없는 경우
-            raise HTTPException( # HTTP 오류 응답을 만듬
-                status_code=404, # 사용자를 찾지 못했다는 상태 코드
-                detail='사용자를 찾을 수 없습니다.', # 오류 설명
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail='사용자를 찾을 수 없습니다.',
             )
 
-        return dict(row) # 사용자 이름과 잔액을 반환
+        return dict(row)
 
-    finally: # 항상 실행
-        connection.close() # DB 연결 종료
+    finally:
+        connection.close()
 
-class PurcjaseCreate(BaseModel): #  # 현재 코드의 클래스 이름을 유지, 구매 입력 구조
-    quantity: int = Field(strict=True, gt=0, le=9007199254740991) # 구매 수령을 양의 정수로 제한
+class PurcjaseCreate(BaseModel):
+    quantity: int = Field(strict=True, gt=0, le=9007199254740991)
 
 
-@app.post('/listings/{listing_id}/purchase',status_code=201) # 특정 판매 등록의 구매를 처리함
+@app.post('/listings/{listing_id}/purchase',status_code=201)
 def purchase_listing(
     listing_id:int, 
     purchase: PurcjaseCreate,
     user: dict = Depends(get_current_user),
-    ): # 판매 번호와 구매 요청을 받음
+    ):
     buyer_username = user['username']
-    connection = get_connection() # 이번 구매에 사용할 DB 연결
+    connection = get_connection()
 
-    try: # 구매 작업 시작
-        with connection: # 안쪽 작업이 모두 성공하면 저장하고, 오류가 나면 변경을 취소
-            connection.execute("BEGIN IMMEDIATE") # 쓰기 트랜잭션을 시작해 다른 쓰기 작업과 순서를 조정
+    try:
+        with connection:
+            connection.execute("BEGIN IMMEDIATE")
 
-            listing = connection.execute( # 현재 DB의 판매 정보를 조회
-                "SELECT * FROM listings WHERE listing_id = ?", # 구매 대상 판매 번호를 찾음
-                (listing_id,), # 주소에서 받은 판매 번호
-            ).fetchone() # 판매 정보 한 행을 가져옴
+            listing = connection.execute(
+                "SELECT * FROM listings WHERE listing_id = ?",
+                (listing_id,),
+            ).fetchone()
 
-            if listing is None: # 해당 판매 등록이 없는 경우
-                raise HTTPException(404, '판매 정보를 찾을 수 없습니다.') # 구매를 중단
+            if listing is None:
+                raise HTTPException(404, '판매 정보를 찾을 수 없습니다.')
 
-            if listing['status'] != '판매중': # 판매완료 또는 취소된 등록이라면 실행
-                raise HTTPException(409, '판매 중인 아이템이 아닙니다.') # 현재 판매 상태와 충돌하는 요청
+            if listing['status'] != '판매중':
+                raise HTTPException(409, '판매 중인 아이템이 아닙니다.')
 
-            if purchase.quantity > listing['quantity']: # 요청한 수량이 현재 남은 수량보다 많은 경우
-                raise HTTPException(409,'판매 수량이 부적합니다.') # 원래 코드의 문구를 유지 
+            if purchase.quantity > listing['quantity']:
+                raise HTTPException(409,'판매 수량이 부적합니다.')
 
 
-            if buyer_username == listing['seller']: # 구매자와 판매자가 같은 경우
-                raise HTTPException(400,'자신의 아이템은 구매할 수 없습니다.') # 자기 상품 구매 금지
+            if buyer_username == listing['seller']:
+                raise HTTPException(400,'자신의 아이템은 구매할 수 없습니다.')
 
-            buyer = connection.execute( # 구매자의 계정 정보를 찾음
-                "SELECT * FROM users WHERE username = ?", # 계정 테이블에서 이름을 조회
-                (buyer_username,), # 요청으로 받은 구매자 이름
-            ).fetchone() # 구매자 정보를 한 행을 가져옴
+            buyer = connection.execute(
+                "SELECT * FROM users WHERE username = ?",
+                (buyer_username,),
+            ).fetchone()
 
-            seller = connection.execute( # 판매자의 계정 정보를 찾음
-                "SELECT * FROM users WHERE username = ?", # 계정 테이블 조회
-                (listing['seller'],), # 판매자 이름을 판매 등록에 저장된 값을 사용
-            ).fetchone() # 판매자 정보 한 행을 가져옴
+            seller = connection.execute(
+                "SELECT * FROM users WHERE username = ?",
+                (listing['seller'],),
+            ).fetchone()
 
-            if buyer is None or seller is None: # 두 계정 중 하나라도 없으면 실행
-                raise HTTPException(404, '구매자 또는 판매자 계정이 없습니다.') # 구매 중단
+            if buyer is None or seller is None:
+                raise HTTPException(404, '구매자 또는 판매자 계정이 없습니다.')
 
-            total = listing['price'] * purchase.quantity # DB의 개당 가격*구매 수량으로 금액을 계산
+            total = listing['price'] * purchase.quantity
 
-            if buyer['balance'] < total: # 구매자의 잔액을 결재 금액보다 적은 경우
-                raise HTTPException(400, '보유 재화가 부족합니다.') # 잔액 변경 전에 구매를 중단
+            if buyer['balance'] < total:
+                raise HTTPException(400, '보유 재화가 부족합니다.')
 
-            connection.execute( # 구매자에게서 재화를 차감
-                "UPDATE users SET balance = balance - ? WHERE username = ?", # 잔액을 구매 금액만큼 줄임
-                (total, buyer_username), # 차감할 금액과 구매자 이름
-            ) # 아직 트랜잭션 안이므로 이 변경만 따로 확정되진 않음
-
-            remaining = listing['quantity'] - purchase.quantity # 구매 후 남은 판매 수량
-            status = '판매완료' if remaining == 0 else '판매중' # 남은 수량이 0이면 판매완료로 변경
-
-            connection.execute( # 판매 등록의 남은 수량과 상태를 갱신
-                "UPDATE listings SET quantity = ?, status = ? WHERE listing_id = ?", # 특정 등록만 수정
-                (remaining, status, listing_id), # 남은 수량/상태/판매 번호를 순서대로 전달
+            connection.execute(
+                "UPDATE users SET balance = balance - ? WHERE username = ?",
+                (total, buyer_username),
             )
 
-            cursor = connection.execute( # 성공한 구매의 거래 기록을 추가
+            remaining = listing['quantity'] - purchase.quantity
+            status = '판매완료' if remaining == 0 else '판매중'
+
+            connection.execute(
+                "UPDATE listings SET quantity = ?, status = ? WHERE listing_id = ?",
+                (remaining, status, listing_id),
+            )
+
+            cursor = connection.execute(
                 """
-                INSERT INTO trades (seller, buyer, item_name, price, quantity) -- 완료된 거래를 기록
-                VALUES(?,?,?,?,?) -- 아래 다섯 값을 사용
+                INSERT INTO trades (seller, buyer, item_name, price, quantity)
+                VALUES(?,?,?,?,?)
                 """,
                 (
                     listing['seller'],
@@ -468,34 +468,34 @@ def purchase_listing(
                     purchase.quantity,
                 ),
             )
-            connection.execute(  # 구매가 성공한 거래의 판매 대금을 기록합니다.
+            connection.execute(
                 """
                 INSERT INTO trade_payouts (trade_id, seller, amount, created_at)
                 VALUES (?, ?, ?, ?)
-                """,  # 수령 시각은 NULL로 두어 미수령 상태로 저장합니다.
+                """,
                 (
-                    cursor.lastrowid,  # 방금 생성한 거래 번호입니다.
-                    listing['seller'],  # 대금을 받을 판매자입니다.
-                    total,  # 구매자가 지불한 금액입니다.
-                    int(time.time()),  # 대금 발생 시각입니다.
+                    cursor.lastrowid,
+                    listing['seller'],
+                    total,
+                    int(time.time()),
                 ),
             )
 
-            result = { # 구매 결과로 돌려줄 정보를 미리 구성
-                'trade_id': cursor.lastrowid, # 새 거래 기록의 번호
-                'item_name': listing['item_name'], # 구매할 아이템 이름
-                'quantity': purchase.quantity, # 이번 구매 수량
-                'total_amount': total, # 사용한 재화
-                'buyer_balance': buyer['balance'] - total, # 조회 당시 잔액에서 금액을 뺀 구매 후 잔액
-                'remaining_quantity': remaining, # 구매 후 남은 판매 수량
-                'status': status, # 구매 후 판매 등록 상태
-            } # 이 딕셔너리는 응답을 위한 정보이며 별도의 테이블은 아님
+            result = {
+                'trade_id': cursor.lastrowid,
+                'item_name': listing['item_name'],
+                'quantity': purchase.quantity,
+                'total_amount': total,
+                'buyer_balance': buyer['balance'] - total,
+                'remaining_quantity': remaining,
+                'status': status,
+            }
 
-        return result # with 블록을 정상 종료하고 DB 변경이 확정된 뒤 결과를 반환
-    finally: # 구매 성공/실패와 상관없이 실행
-        connection.close() # DB 연결 종료
+        return result
+    finally:
+        connection.close()
 
-@app.get('/me/trades') # 특정 사용자의 구매 기록을 조회하는 API
+@app.get('/me/trades')
 def get_user_trades(
     role: Literal['buyer','seller'] = 'buyer',
     user: dict = Depends(get_current_user),
@@ -503,8 +503,8 @@ def get_user_trades(
     connection = get_connection()
     column = 'buyer' if role == 'buyer' else 'seller'
 
-    try: # 구매 내역 조회 시작
-        rows = connection.execute( # 거래 기록 조회 SQL 실행
+    try:
+        rows = connection.execute(
             f"""
             SELECT 
                 trade_id, item_name, seller, buyer, price, quantity,
@@ -527,23 +527,23 @@ def get_user_trades(
             WHERE {column} = ? -- 해당 사용자가 구매자인 거래만 가져옴
             ORDER BY trade_id DESC -- 최근 거래부터 표시
             """,
-            (user['username'],), # 주소에서 받은 사용자 이름
-        ).fetchall() # 해당 구매의 거래를 모두 가져옴
+            (user['username'],),
+        ).fetchall()
 
-        return { # 구매 내역 응답을 만듬
-            'total':len(rows), # 구매 기록 건수
-            'trades': [dict(row) for row in rows], # 각 거래를 딕셔너리로 변환한 목록
-        } # 기록이 없으면 0건과 빈 목록을 반환
+        return {
+            'total':len(rows),
+            'trades': [dict(row) for row in rows],
+        }
 
-    finally: # 항상 실행
-        connection.close() # DB 연결 종료
+    finally:
+        connection.close()
             
-@app.get('/me/listings')  # 특정 사용자가 등록한 판매 목록 조회
-def get_user_listings(user: dict = Depends(get_current_user)): # 조회할 판매자 이름 받음
-    connection = get_connection() # DB 연결
+@app.get('/me/listings')
+def get_user_listings(user: dict = Depends(get_current_user)):
+    connection = get_connection()
 
-    try: # 판매 등록 내역 조회 시작
-        rows = connection.execute( # SQL 실행
+    try:
+        rows = connection.execute(
             """
             SELECT
                 listing_id,
@@ -552,23 +552,23 @@ def get_user_listings(user: dict = Depends(get_current_user)): # 조회할 판�
                 price,
                 quantity,
                 status
-            FROM listings -- 판매 등록 테이블 조화
-            WHERE seller = ? -- 해당 판매자가 등록한 항목만 가져옴
-            ORDER BY listing_id DESC -- 최근 등록한 항목부터 표시
+            FROM listings
+            WHERE seller = ?
+            ORDER BY listing_id DESC
             """,
-            (user['username'],), # 조회할 판매자 이름 전달
-        ).fetchall() # 상태와 관계없이 해당 판매자의 등록 내역을 가져옴
+            (user['username'],),
+        ).fetchall()
 
-        return { # 판매 내역 응답 구성
-            'total': len(rows), # 판매 등록 건수
-            'listings': [dict(row) for row in rows], # 화면에 표시할 판매 등록 목록
-        } # 실제 판매 목록 조회 버튼이 사용하는 응답
+        return {
+            'total': len(rows),
+            'listings': [dict(row) for row in rows],
+        }
 
-    finally: # 조회 성공 여부와 관계없이 실행
-        connection.close() # 사용한 DB 연결 종료
+    finally:
+        connection.close()
 
 
-@app.post('/listings/{listing_id}/cancel') # 특정 판매 등록을 취소하는 주소
+@app.post('/listings/{listing_id}/cancel')
 def cancel_listing(
     listing_id: int,
     user: dict = Depends(get_current_user),
@@ -576,21 +576,21 @@ def cancel_listing(
     connection = get_connection()
     
     try:
-        with connection: # 성공하면 저장하고, 오류가 나면 변경을 취소
-            connection.execute("BEGIN IMMEDIATE") # 구매오 취소가 동시에 처리되지 않도록 쓰기 순서 조정
+        with connection:
+            connection.execute("BEGIN IMMEDIATE")
 
             listing = connection.execute( 
                 "SELECT * FROM listings WHERE listing_id = ?",
-                (listing_id,), # 취소할 판매 등록 번호
-            ).fetchone() # 해당 판매 정보 한 행을 가져옴
+                (listing_id,),
+            ).fetchone()
 
-            if listing is None: # 등록 번호가 없는 경우
+            if listing is None:
                 raise HTTPException(404,'판매 정보를 찾을 수 없습니다.') 
 
             if listing['seller'] != user['username']:
                 raise HTTPException(403,'본인이 등록한 아이템만 취소할 수 있습니다.')
 
-            if listing['status'] != '판매중': # 판매완료 또는 이미 취소된 등록은 처리하지 않음
+            if listing['status'] != '판매중':
                 raise HTTPException(409,'판매 중인 등록만 취소할 수 있습니다.')
 
             if listing['stock_reserved'] == 1:
@@ -615,7 +615,7 @@ def cancel_listing(
             
             connection.execute(
                 "UPDATE listings SET status = '취소' WHERE listing_id = ?",
-                (listing_id,), # 수량은 유지하고 판매 상태만 바꿈
+                (listing_id,),
             )
 
 
@@ -679,65 +679,65 @@ def signup(request:SignupRequest):
         connection.close()
 
 DUMMY_PASSWORD_HASH = password_hasher.hash(
-    secrets.token_urlsafe(32) # 없는 계정도 비밀번호 검증 연산을 수행하도록 준비
+    secrets.token_urlsafe(32)
 )
 
-class LoginRequest(BaseModel): # 로그인할 때 받는 입력
+class LoginRequest(BaseModel):
     username: str = Field(
         min_length=3, max_length=32,
-        pattern=r"^[A-Za-z0-9_]+$", # 회원가입과 같은 아이디 규칙
+        pattern=r"^[A-Za-z0-9_]+$",
     )
     password:SecretStr=Field(
-        min_length=1, max_length=128, # 입력한 비밀번호를 받음
+        min_length=1, max_length=128,
     )
 
-@app.post('/auth/login') # 아이디와 비밀번호로 로그읺하는 API
+@app.post('/auth/login')
 def login(request: LoginRequest):
-    connection = get_connection() # 계정 정보를 조회할 DB 연결
+    connection = get_connection()
 
     try:
         account = connection.execute(
             "SELECT username, password_hash FROM user_credentials WHERE username = ?",
-            (request.username,), # 입력한 아이디로 인증 정보 찾음
+            (request.username,),
         ).fetchone()
 
         stored_hash = (
             account['password_hash'] if account is not None
             else DUMMY_PASSWORD_HASH
-        ) # 없는 계정도 해시 검증 과정을 거침
-
-        password_matches = password_hasher.verify(
-            request.password.get_secret_value(), # 사용자가 입력한 비밀번호
-            stored_hash, # DB의 해시와 비교
         )
 
-        if account is None or not password_matches: # 계정이 없거나 비밀번호가 다른 경우
+        password_matches = password_hasher.verify(
+            request.password.get_secret_value(),
+            stored_hash,
+        )
+
+        if account is None or not password_matches:
             raise HTTPException(
                 status_code=401,
                 detail='아이디 또는 비밀번호가 올바르지 않습니다.',
             )
 
-        token = secrets.token_urlsafe(32) # 이번 로그인에 사용할 임의의 토큰
-        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest() # DBD에는 토큰 원문 대신 해시를 저장
-        now = int(time.time()) # 현재 시각을 초 단위 숫자로 가져옴
-        expires_at = now + 3600 # 현재부터 1시간 후 만료
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+        now = int(time.time())
+        expires_at = now + 3600
 
-        with connection: # 로그인 정보를 DB에 저장
+        with connection:
             connection.execute(
                 "DELETE FROM auth_sessions WHERE expires_at <= ?",
-                (now,), # 이미 만료된 로그인 정보를 정리
+                (now,),
             )
 
             connection.execute(
                 "INSERT INTO auth_sessions (token_hash, username, expires_at) VALUES (?,?,?)",
-                (token_hash, account['username'], expires_at), # 토큰 해시/사용자/만료 시각
+                (token_hash, account['username'], expires_at),
             )
 
         return {
-            'access_token': token, # 로그인한 사용자에게 토큰 원문을 전달
-            'token_type': 'bearer', # 이후 요청에서 사용할 인증 방식
-            'expires_in': 3600, # 토큰 사용 가능 시간이며 단위는 초 단위
-            'username': account['username'], # 로그인한 계정
+            'access_token': token,
+            'token_type': 'bearer',
+            'expires_in': 3600,
+            'username': account['username'],
         }
 
     finally:
